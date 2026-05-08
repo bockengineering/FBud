@@ -5,6 +5,7 @@ import { AppShell } from "@/components/AppShell";
 import { FundingBars, FundingSplit } from "@/components/FundingCharts";
 import { MetricCard } from "@/components/MetricCard";
 import { RelatedPrograms } from "@/components/RelatedPrograms";
+import { SourceDrawer } from "@/components/SourceDrawer";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -16,6 +17,12 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
   const program = getProgram(id);
   if (!program) notFound();
   const prime = program.prime_contractors[0]?.name ?? "Not parsed";
+  const sourceBase = {
+    programName: program.name,
+    pageLabel: program.page_label,
+    pdfPageNumber: program.pdf_page_number,
+  };
+  const contractorExcerpt = program.prime_contractors.map((contractor) => `${contractor.role}: ${contractor.name}`).join("\n");
 
   return (
     <AppShell>
@@ -31,17 +38,37 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
               <div className="flex flex-wrap gap-2">
                 <Badge className="bg-cyan-400/10 text-cyan-200">{program.mission_area}</Badge>
                 <Badge variant="outline" className="border-white/10 text-slate-300">{program.service_or_component}</Badge>
-                <Badge variant="outline" className="border-white/10 text-slate-300">{source(program.page_label)}</Badge>
+                <SourceDrawer
+                  {...sourceBase}
+                  sectionLabel="Program Source Page"
+                  excerpt={program.source_text}
+                  triggerLabel={source(program.page_label)}
+                />
                 {program.needs_review ? <Badge className="bg-orange-400/10 text-orange-200">Parser review</Badge> : null}
               </div>
               <h1 className="mt-4 text-4xl font-semibold text-white">{program.name}</h1>
               <p className="mt-4 text-lg leading-8 text-slate-300">{program.description}</p>
+              <div className="mt-3">
+                <SourceDrawer
+                  {...sourceBase}
+                  sectionLabel="Description Evidence"
+                  excerpt={program.description}
+                  triggerLabel="View description source"
+                  variant="ghost"
+                />
+              </div>
             </section>
             <div className="grid gap-3 md:grid-cols-3">
               <MetricCard label="FY2025 actual" value={money(program.computed.fy2025_total)} detail={source(program.page_label)} />
               <MetricCard label="FY2026 enacted/current" value={money(program.computed.fy2026_total)} detail={source(program.page_label)} />
               <MetricCard label="FY2027 request" value={money(program.computed.fy2027_total)} detail={source(program.page_label)} />
             </div>
+            <SourceDrawer
+              {...sourceBase}
+              sectionLabel="Funding Table Evidence"
+              excerpt={program.raw_table_text}
+              triggerLabel="Open funding table source"
+            />
             <div className="grid gap-4 lg:grid-cols-2">
               <Card className="border-white/10 bg-white/[0.045] shadow-none">
                 <CardHeader><CardTitle className="text-white">Total Funding Trend</CardTitle></CardHeader>
@@ -54,16 +81,49 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
             </div>
             <div className="grid gap-4 lg:grid-cols-2">
               <Card className="border-white/10 bg-white/[0.045] shadow-none">
-                <CardHeader><CardTitle className="text-white">Mission</CardTitle></CardHeader>
+                <CardHeader>
+                  <div className="flex items-center justify-between gap-3">
+                    <CardTitle className="text-white">Mission</CardTitle>
+                    <SourceDrawer
+                      {...sourceBase}
+                      sectionLabel="Mission Evidence"
+                      excerpt={program.mission}
+                      triggerLabel="Source"
+                      variant="ghost"
+                    />
+                  </div>
+                </CardHeader>
                 <CardContent className="text-slate-300">{program.mission || "Mission text was not confidently parsed."}</CardContent>
               </Card>
               <Card className="border-white/10 bg-white/[0.045] shadow-none">
-                <CardHeader><CardTitle className="text-white">FY2027 Program</CardTitle></CardHeader>
+                <CardHeader>
+                  <div className="flex items-center justify-between gap-3">
+                    <CardTitle className="text-white">FY2027 Program</CardTitle>
+                    <SourceDrawer
+                      {...sourceBase}
+                      sectionLabel="FY2027 Program Evidence"
+                      excerpt={program.fy2027_program_summary}
+                      triggerLabel="Source"
+                      variant="ghost"
+                    />
+                  </div>
+                </CardHeader>
                 <CardContent className="text-slate-300">{program.fy2027_program_summary || "FY2027 program text was not confidently parsed."}</CardContent>
               </Card>
             </div>
             <Card className="border-white/10 bg-white/[0.045] shadow-none">
-              <CardHeader><CardTitle className="text-white">Prime Contractors</CardTitle></CardHeader>
+              <CardHeader>
+                <div className="flex items-center justify-between gap-3">
+                  <CardTitle className="text-white">Prime Contractors</CardTitle>
+                  <SourceDrawer
+                    {...sourceBase}
+                    sectionLabel="Prime Contractor Evidence"
+                    excerpt={contractorExcerpt || "No contractor evidence parsed."}
+                    triggerLabel="Source"
+                    variant="ghost"
+                  />
+                </div>
+              </CardHeader>
               <CardContent className="flex flex-wrap gap-2">
                 {program.prime_contractors.map((contractor) => (
                   <Link key={contractor.name} href={`/contractors/${contractor.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`}>
@@ -86,6 +146,14 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
                     <CardTitle className="text-white">Raw Source Excerpt</CardTitle>
                     <p className="mt-1 text-sm text-slate-400">Parser confidence {(program.confidence_score * 100).toFixed(0)}%, {source(program.page_label)}</p>
                   </CollapsibleTrigger>
+                  <div className="pt-2">
+                    <SourceDrawer
+                      {...sourceBase}
+                      sectionLabel="Full Raw Page Evidence"
+                      excerpt={program.source_text}
+                      triggerLabel="Open PDF drawer"
+                    />
+                  </div>
                 </CardHeader>
                 <CollapsibleContent>
                   <CardContent>
@@ -109,7 +177,16 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
                   <div className="flex justify-between"><span className="text-slate-400">Proc share</span><span>{program.computed.procurement_share_fy2027.toFixed(1)}%</span></div>
                   <div className="flex justify-between"><span className="text-slate-400">Mandatory share</span><span>{program.computed.mandatory_share_fy2027.toFixed(1)}%</span></div>
                   <div className="flex justify-between"><span className="text-slate-400">Prime</span><span className="text-right">{prime}</span></div>
-                  <div className="flex justify-between"><span className="text-slate-400">Source</span><span>{program.page_label}</span></div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-slate-400">Source</span>
+                    <SourceDrawer
+                      {...sourceBase}
+                      sectionLabel="Program Source Page"
+                      excerpt={program.source_text}
+                      triggerLabel={program.page_label}
+                      variant="link"
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
