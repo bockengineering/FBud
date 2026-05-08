@@ -1,5 +1,5 @@
 import dataset from "@/data/weapons-data.json";
-import type { BudgetDataset, Contractor, MissionArea, Program } from "@/lib/types";
+import type { AppropriationStage, BudgetDataset, Contractor, MissionArea, Program } from "@/lib/types";
 
 const data = dataset as BudgetDataset;
 
@@ -115,5 +115,76 @@ export function summary() {
       0,
     ),
     reviewRows: data.funding_rows.filter((row) => row.needs_review).length,
+  };
+}
+
+export function programAppropriationStages(program: Program): AppropriationStage[] {
+  const request = program.computed.fy2027_total;
+  return [
+    {
+      id: "request",
+      label: "President's Budget Request",
+      chamber: "Executive",
+      status: "loaded",
+      amount_millions: request,
+      delta_from_request_millions: 0,
+      percent_delta_from_request: 0,
+      source_label: `Weapons Book p. ${program.page_label}`,
+      source_url: null,
+    },
+    {
+      id: "house",
+      label: "House Mark",
+      chamber: "House",
+      status: "pending",
+      amount_millions: null,
+      delta_from_request_millions: null,
+      percent_delta_from_request: null,
+      source_label: null,
+      source_url: null,
+    },
+    {
+      id: "senate",
+      label: "Senate Mark",
+      chamber: "Senate",
+      status: "pending",
+      amount_millions: null,
+      delta_from_request_millions: null,
+      percent_delta_from_request: null,
+      source_label: null,
+      source_url: null,
+    },
+    {
+      id: "conference",
+      label: "Conference / JES",
+      chamber: "Conference",
+      status: "pending",
+      amount_millions: null,
+      delta_from_request_millions: null,
+      percent_delta_from_request: null,
+      source_label: null,
+      source_url: null,
+    },
+    {
+      id: "enacted",
+      label: "Final Enacted",
+      chamber: "Public Law",
+      status: "pending",
+      amount_millions: null,
+      delta_from_request_millions: null,
+      percent_delta_from_request: null,
+      source_label: null,
+      source_url: null,
+    },
+  ];
+}
+
+export function appropriationsSummary() {
+  const totals = summary();
+  return {
+    requestTotal: totals.totalFy2027,
+    trackedPrograms: data.programs.length,
+    loadedMarks: data.programs.length,
+    pendingStages: data.programs.length * 4,
   };
 }

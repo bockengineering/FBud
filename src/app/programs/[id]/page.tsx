@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { AppShell } from "@/components/AppShell";
+import { AppropriationsTracker } from "@/components/AppropriationsTracker";
 import { FundingBars, FundingSplit } from "@/components/FundingCharts";
 import { MetricCard } from "@/components/MetricCard";
 import { RelatedPrograms } from "@/components/RelatedPrograms";
@@ -63,6 +64,7 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
               <MetricCard label="FY2026 enacted/current" value={money(program.computed.fy2026_total)} detail={source(program.page_label)} />
               <MetricCard label="FY2027 request" value={money(program.computed.fy2027_total)} detail={source(program.page_label)} />
             </div>
+            <AppropriationsTracker program={program} />
             <SourceDrawer
               {...sourceBase}
               sectionLabel="Funding Table Evidence"

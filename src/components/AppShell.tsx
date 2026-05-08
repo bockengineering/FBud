@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, Building2, FileSearch, Files, LayoutDashboard, Radar, Search } from "lucide-react";
+import { BarChart3, Building2, FileSearch, Files, Landmark, LayoutDashboard, Radar, Search } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 const nav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/programs", label: "Programs", icon: Radar },
+  { href: "/appropriations", label: "Appropriations", icon: Landmark },
   { href: "/mission-areas", label: "Mission Areas", icon: BarChart3 },
   { href: "/contractors", label: "Contractors", icon: Building2 },
   { href: "/review", label: "Review", icon: FileSearch },

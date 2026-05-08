@@ -57,6 +57,7 @@ model Program {
   sourceRelationships   ProgramRelationship[] @relation("relationship_source")
   targetRelationships   ProgramRelationship[] @relation("relationship_target")
   lineItemLinks         ProgramLineItemLink[]
+  appropriationMarks    AppropriationMark[]
 
   @@map("programs")
 }
@@ -171,6 +172,7 @@ model BudgetLineItem {
   needsReview         Boolean               @default(false) @map("needs_review")
   document            BudgetDocument        @relation(fields: [documentId], references: [id])
   links               ProgramLineItemLink[]
+  appropriationMarks  AppropriationMark[]
 
   @@map("budget_line_items")
 }
@@ -186,4 +188,47 @@ model ProgramLineItemLink {
   budgetLineItem     BudgetLineItem @relation(fields: [budgetLineItemId], references: [id])
 
   @@map("program_line_item_links")
+}
+
+model LegislativeDocument {
+  id                 String              @id
+  fiscalYear         Int                 @map("fiscal_year")
+  chamber            String
+  documentType       String              @map("document_type")
+  billNumber         String?             @map("bill_number")
+  title              String
+  sourceUrl          String?             @map("source_url")
+  sourceFilename     String?             @map("source_filename")
+  publicationDate    DateTime?           @map("publication_date")
+  uploadedAt         DateTime            @default(now()) @map("uploaded_at")
+  marks              AppropriationMark[]
+
+  @@map("legislative_documents")
+}
+
+model AppropriationMark {
+  id                      String               @id
+  legislativeDocumentId   String               @map("legislative_document_id")
+  programId               String?              @map("program_id")
+  budgetLineItemId        String?              @map("budget_line_item_id")
+  fiscalYear              Int                  @map("fiscal_year")
+  chamber                 String
+  stage                   String
+  fundingType             String?              @map("funding_type")
+  amountMillions          Decimal?             @map("amount_millions")
+  quantity                Decimal?
+  deltaFromRequestMillions Decimal?            @map("delta_from_request_millions")
+  percentDeltaFromRequest Decimal?             @map("percent_delta_from_request")
+  markDisposition         String?              @map("mark_disposition")
+  explanatoryText         String?              @map("explanatory_text")
+  sourcePage              String?              @map("source_page")
+  rawText                 String?              @map("raw_text")
+  confidenceScore         Decimal?             @map("confidence_score")
+  needsReview             Boolean              @default(false) @map("needs_review")
+  createdAt               DateTime             @default(now()) @map("created_at")
+  legislativeDocument     LegislativeDocument  @relation(fields: [legislativeDocumentId], references: [id])
+  program                 Program?             @relation(fields: [programId], references: [id])
+  budgetLineItem          BudgetLineItem?      @relation(fields: [budgetLineItemId], references: [id])
+
+  @@map("appropriation_marks")
 }

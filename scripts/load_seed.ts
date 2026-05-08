@@ -19,6 +19,9 @@ type SeedProgram = {
   source_text: string;
   confidence_score: number;
   needs_review: boolean;
+  computed: {
+    fy2027_total: number;
+  };
 };
 
 type SeedPayload = {
@@ -90,6 +93,8 @@ const payload = JSON.parse(readFileSync(join(process.cwd(), "src/data/weapons-da
 
 async function main() {
   await prisma.programLineItemLink.deleteMany();
+  await prisma.appropriationMark.deleteMany();
+  await prisma.legislativeDocument.deleteMany();
   await prisma.budgetLineItem.deleteMany();
   await prisma.budgetDocument.deleteMany();
   await prisma.programRelationship.deleteMany();
@@ -119,6 +124,17 @@ async function main() {
       documentType: payload.metadata.document_type,
       sourceFilename: payload.metadata.source_filename,
       appropriationType: "RDT&E / Procurement",
+    },
+  });
+
+  await prisma.legislativeDocument.create({
+    data: {
+      id: "fy2027-weapons-pb-request",
+      fiscalYear: payload.metadata.fiscal_year,
+      chamber: "executive",
+      documentType: "presidents_budget_request",
+      title: "FY2027 President's Budget Request Baseline from Weapons Book",
+      sourceFilename: payload.metadata.source_filename,
     },
   });
 
@@ -213,6 +229,26 @@ async function main() {
       relationshipType: relationship.relationship_type,
       score: relationship.score,
       explanation: relationship.explanation,
+    })),
+  });
+
+  await prisma.appropriationMark.createMany({
+    data: payload.programs.map((program) => ({
+      id: `${program.id}-fy2027-pb-request-total`,
+      legislativeDocumentId: "fy2027-weapons-pb-request",
+      programId: program.id,
+      fiscalYear: payload.metadata.fiscal_year,
+      chamber: "executive",
+      stage: "request",
+      fundingType: "Total",
+      amountMillions: program.computed.fy2027_total,
+      deltaFromRequestMillions: 0,
+      percentDeltaFromRequest: 0,
+      markDisposition: "baseline_request",
+      sourcePage: program.page_label,
+      rawText: program.source_text,
+      confidenceScore: program.confidence_score,
+      needsReview: program.needs_review,
     })),
   });
 

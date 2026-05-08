@@ -8,6 +8,7 @@ FBud is a dark, analyst-focused web app for navigating the FY2027 Department of 
 - Python PDF ingestion with PyMuPDF
 - Prisma schema and PostgreSQL migration for Supabase or local Postgres
 - Dashboard, program explorer, program detail pages, mission-area pages, contractor pages, parser review, and sources
+- Appropriations tracking from President's Budget request through House, Senate, conference, and final enacted amounts
 - Future-ready tables for R-1, P-1, O-1, justification books, budget line items, and program-line links
 - Source-page citations and raw extracted text for auditability
 
@@ -89,3 +90,13 @@ Each parser is intended to output a normalized shape containing document metadat
 ## Future Sources
 
 The next logical sources are R-1 and P-1 documents. R-1 should add RDT&E program elements, budget activities, project numbers, and justification-book links. P-1 should add procurement line numbers, quantities, and appropriation-account depth.
+
+Legislative tracking sources should follow as soon as they are published:
+
+- House Appropriations and authorization marks
+- Senate Appropriations and authorization marks
+- Committee reports and tables
+- Conference / Joint Explanatory Statement
+- Public law and enacted account-level tables
+
+These records should populate `legislative_documents` and `appropriation_marks`, linking each mark to a Weapons Book program or future R-1/P-1/O-1 budget line item.

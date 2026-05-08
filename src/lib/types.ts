@@ -84,6 +84,18 @@ export type ProgramRelationship = {
   explanation: string;
 };
 
+export type AppropriationStage = {
+  id: "request" | "house" | "senate" | "conference" | "enacted";
+  label: string;
+  chamber: string;
+  status: "loaded" | "pending";
+  amount_millions: number | null;
+  delta_from_request_millions: number | null;
+  percent_delta_from_request: number | null;
+  source_label: string | null;
+  source_url: string | null;
+};
+
 export type BudgetDataset = {
   metadata: {
     id: string;
