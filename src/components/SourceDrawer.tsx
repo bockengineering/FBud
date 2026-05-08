@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, FileText, Highlighter } from "lucide-react";
+import { ExternalLink, FileText } from "lucide-react";
 import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,6 @@ export function SourceDrawer({
   sectionLabel,
   pageLabel,
   pdfPageNumber,
-  excerpt,
   triggerLabel = "Source",
   variant = "outline",
   className,
@@ -36,7 +35,6 @@ export function SourceDrawer({
   const page = pdfPageNumber ?? 1;
   const pdfUrl = `/api/source-pdf#page=${page}&zoom=page-width&navpanes=0&toolbar=0`;
   const pageImageUrl = `/source-pages/page-${page}.jpg`;
-  const cleanExcerpt = excerpt?.trim() || "No parsed excerpt is available for this section.";
 
   return (
     <Sheet>
@@ -78,34 +76,17 @@ export function SourceDrawer({
             </a>
           </div>
         </SheetHeader>
-        <div className="grid min-h-0 flex-1 gap-0 overflow-hidden xl:grid-cols-[minmax(720px,1fr)_420px]">
-          <div className="min-h-[68vh] overflow-auto border-b border-white/10 bg-[#111827] p-4 xl:min-h-0 xl:border-b-0 xl:border-r xl:p-6">
-            <div className="mx-auto max-w-[980px] rounded-sm bg-white p-2 shadow-2xl">
-              <Image
-                src={pageImageUrl}
-                alt={`${programName} source page ${pageLabel}`}
-                width={1224}
-                height={1584}
-                className="h-auto w-full"
-                unoptimized
-              />
-            </div>
+        <div className="min-h-0 flex-1 overflow-auto bg-[#111827] p-4 xl:p-6">
+          <div className="mx-auto max-w-[1120px] rounded-sm bg-white p-2 shadow-2xl">
+            <Image
+              src={pageImageUrl}
+              alt={`${programName} source page ${pageLabel}`}
+              width={1224}
+              height={1584}
+              className="h-auto w-full"
+              unoptimized
+            />
           </div>
-          <aside className="min-h-0 overflow-auto bg-[#0a1621] p-4 xl:p-5">
-            <div className="rounded-md border border-cyan-300/30 bg-cyan-300/8 p-4 shadow-[0_0_0_1px_rgba(34,211,238,.08)_inset]">
-              <div className="mb-3 flex items-center gap-2 text-sm font-medium text-cyan-200">
-                <Highlighter className="h-4 w-4" />
-                Highlighted parser evidence
-              </div>
-              <div className="max-h-[34vh] overflow-auto whitespace-pre-wrap rounded border border-white/10 bg-black/25 p-3 text-sm leading-6 text-slate-100 xl:max-h-[68vh]">
-                {cleanExcerpt}
-              </div>
-            </div>
-            <p className="mt-4 text-xs leading-5 text-slate-500">
-              This viewer renders the cited PDF page as an image so it stays readable inside FBud.
-              Use the PDF link for the native browser viewer; coordinate-level overlays can be added by storing PyMuPDF bounding boxes during ingestion.
-            </p>
-          </aside>
         </div>
       </SheetContent>
     </Sheet>
