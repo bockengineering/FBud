@@ -1,6 +1,7 @@
 "use client";
 
 import { ExternalLink, FileText, Highlighter } from "lucide-react";
+import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -33,7 +34,8 @@ export function SourceDrawer({
   className?: string;
 }) {
   const page = pdfPageNumber ?? 1;
-  const pdfUrl = `/api/source-pdf#page=${page}&zoom=page-width`;
+  const pdfUrl = `/api/source-pdf#page=${page}&zoom=page-width&navpanes=0&toolbar=0`;
+  const pageImageUrl = `/source-pages/page-${page}.jpg`;
   const cleanExcerpt = excerpt?.trim() || "No parsed excerpt is available for this section.";
 
   return (
@@ -55,7 +57,7 @@ export function SourceDrawer({
       </SheetTrigger>
       <SheetContent
         side="right"
-        className="w-[98vw] max-w-[98vw] border-white/10 bg-[#071018] p-0 text-slate-100 sm:max-w-[98vw] lg:w-[min(1400px,96vw)] lg:max-w-[min(1400px,96vw)]"
+        className="!w-[98vw] !max-w-[98vw] border-white/10 bg-[#071018] p-0 text-slate-100 sm:!max-w-[98vw] lg:!w-[min(1400px,96vw)] lg:!max-w-[min(1400px,96vw)]"
       >
         <SheetHeader className="border-b border-white/10 px-5 py-4">
           <div className="flex flex-col gap-3 pr-10 lg:flex-row lg:items-start lg:justify-between">
@@ -76,13 +78,18 @@ export function SourceDrawer({
             </a>
           </div>
         </SheetHeader>
-        <div className="grid min-h-0 flex-1 gap-0 overflow-hidden xl:grid-cols-[minmax(680px,1fr)_420px]">
-          <div className="min-h-[68vh] border-b border-white/10 bg-black/30 xl:min-h-0 xl:border-b-0 xl:border-r">
-            <iframe
-              title={`${programName} source PDF page ${pageLabel}`}
-              src={pdfUrl}
-              className="h-full min-h-[68vh] w-full bg-slate-950 xl:min-h-0"
-            />
+        <div className="grid min-h-0 flex-1 gap-0 overflow-hidden xl:grid-cols-[minmax(720px,1fr)_420px]">
+          <div className="min-h-[68vh] overflow-auto border-b border-white/10 bg-[#111827] p-4 xl:min-h-0 xl:border-b-0 xl:border-r xl:p-6">
+            <div className="mx-auto max-w-[980px] rounded-sm bg-white p-2 shadow-2xl">
+              <Image
+                src={pageImageUrl}
+                alt={`${programName} source page ${pageLabel}`}
+                width={1224}
+                height={1584}
+                className="h-auto w-full"
+                unoptimized
+              />
+            </div>
           </div>
           <aside className="min-h-0 overflow-auto bg-[#0a1621] p-4 xl:p-5">
             <div className="rounded-md border border-cyan-300/30 bg-cyan-300/8 p-4 shadow-[0_0_0_1px_rgba(34,211,238,.08)_inset]">
@@ -95,8 +102,8 @@ export function SourceDrawer({
               </div>
             </div>
             <p className="mt-4 text-xs leading-5 text-slate-500">
-              This first drawer focuses the original PDF on the cited page and highlights the exact text FBud parsed.
-              Coordinate-level overlays can be added by storing PyMuPDF bounding boxes during ingestion.
+              This viewer renders the cited PDF page as an image so it stays readable inside FBud.
+              Use the PDF link for the native browser viewer; coordinate-level overlays can be added by storing PyMuPDF bounding boxes during ingestion.
             </p>
           </aside>
         </div>

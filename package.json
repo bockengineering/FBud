@@ -11,6 +11,7 @@
     "db:migrate": "prisma migrate deploy",
     "db:generate": "prisma generate",
     "db:seed": "tsx scripts/load_seed.ts",
+    "render:sources": "python3 -m pip --disable-pip-version-check install --upgrade --target ./.python_packages -r requirements.txt >/dev/null && python3 scripts/render_source_pages.py",
     "ingest:weapons": "python3 -m pip --disable-pip-version-check install --upgrade --target ./.python_packages -r requirements.txt >/dev/null && PYTHONPATH=.python_packages python3 scripts/ingest_weapons_pdf.py && tsx scripts/load_seed.ts --optional"
   },
   "dependencies": {
