@@ -55,7 +55,7 @@ export function SourceDrawer({
       </SheetTrigger>
       <SheetContent
         side="right"
-        className="w-[96vw] border-white/10 bg-[#071018] p-0 text-slate-100 sm:max-w-none lg:w-[1120px]"
+        className="w-[98vw] max-w-[98vw] border-white/10 bg-[#071018] p-0 text-slate-100 sm:max-w-[98vw] lg:w-[min(1400px,96vw)] lg:max-w-[min(1400px,96vw)]"
       >
         <SheetHeader className="border-b border-white/10 px-5 py-4">
           <div className="flex flex-col gap-3 pr-10 lg:flex-row lg:items-start lg:justify-between">
@@ -76,21 +76,21 @@ export function SourceDrawer({
             </a>
           </div>
         </SheetHeader>
-        <div className="grid min-h-0 flex-1 gap-0 overflow-hidden lg:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.65fr)]">
-          <div className="min-h-[52vh] border-b border-white/10 bg-black/30 lg:min-h-0 lg:border-b-0 lg:border-r">
+        <div className="grid min-h-0 flex-1 gap-0 overflow-hidden xl:grid-cols-[minmax(680px,1fr)_420px]">
+          <div className="min-h-[68vh] border-b border-white/10 bg-black/30 xl:min-h-0 xl:border-b-0 xl:border-r">
             <iframe
               title={`${programName} source PDF page ${pageLabel}`}
               src={pdfUrl}
-              className="h-full min-h-[52vh] w-full bg-slate-950 lg:min-h-0"
+              className="h-full min-h-[68vh] w-full bg-slate-950 xl:min-h-0"
             />
           </div>
-          <aside className="min-h-0 overflow-auto bg-[#0a1621] p-5">
+          <aside className="min-h-0 overflow-auto bg-[#0a1621] p-4 xl:p-5">
             <div className="rounded-md border border-cyan-300/30 bg-cyan-300/8 p-4 shadow-[0_0_0_1px_rgba(34,211,238,.08)_inset]">
               <div className="mb-3 flex items-center gap-2 text-sm font-medium text-cyan-200">
                 <Highlighter className="h-4 w-4" />
                 Highlighted parser evidence
               </div>
-              <div className="max-h-[68vh] overflow-auto whitespace-pre-wrap rounded border border-white/10 bg-black/25 p-3 text-sm leading-6 text-slate-100">
+              <div className="max-h-[34vh] overflow-auto whitespace-pre-wrap rounded border border-white/10 bg-black/25 p-3 text-sm leading-6 text-slate-100 xl:max-h-[68vh]">
                 {cleanExcerpt}
               </div>
             </div>
