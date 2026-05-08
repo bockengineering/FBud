@@ -1,0 +1,119 @@
+import dataset from "@/data/weapons-data.json";
+import type { BudgetDataset, Contractor, MissionArea, Program } from "@/lib/types";
+
+const data = dataset as BudgetDataset;
+
+export function getDataset() {
+  return data;
+}
+
+export function money(value = 0) {
+  if (value >= 1000) return `$${(value / 1000).toFixed(1)}B`;
+  return `$${value.toFixed(1)}M`;
+}
+
+export function delta(value = 0) {
+  const prefix = value > 0 ? "+" : "";
+  return `${prefix}${money(value)}`;
+}
+
+export function pct(value = 0) {
+  const prefix = value > 0 ? "+" : "";
+  return `${prefix}${value.toFixed(1)}%`;
+}
+
+export function source(page?: string) {
+  return page ? `Source p. ${page}` : "Source page pending";
+}
+
+export function getProgram(id: string) {
+  return data.programs.find((program) => program.id === id);
+}
+
+export function getMissionArea(id: string) {
+  return data.mission_areas.find((mission) => mission.id === id);
+}
+
+export function getContractor(id: string) {
+  return data.contractors.find((contractor) => contractor.id === id);
+}
+
+export function contractorPrograms(contractor: Contractor) {
+  const key = contractor.name.toLowerCase();
+  return data.programs.filter((program) =>
+    program.prime_contractors.some((item) => item.name.toLowerCase() === key),
+  );
+}
+
+export function missionPrograms(mission: MissionArea) {
+  return data.programs.filter((program) => program.mission_area_id === mission.id);
+}
+
+export function programSearch(program: Program, query: string) {
+  const haystack = [
+    program.name,
+    program.short_name,
+    program.mission_area,
+    program.service_or_component,
+    program.description,
+    program.mission,
+    program.fy2027_program_summary,
+    program.source_text,
+    ...program.prime_contractors.map((contractor) => contractor.name),
+  ]
+    .join(" ")
+    .toLowerCase();
+  return haystack.includes(query.toLowerCase());
+}
+
+export function filteredPrograms(params: {
+  q?: string;
+  mission?: string;
+  service?: string;
+  contractor?: string;
+  review?: string;
+  cohort?: string;
+  funding?: string;
+  sort?: string;
+}) {
+  let programs = [...data.programs];
+  if (params.q) programs = programs.filter((program) => programSearch(program, params.q ?? ""));
+  if (params.mission) programs = programs.filter((program) => program.mission_area_id === params.mission);
+  if (params.service) programs = programs.filter((program) => program.service_or_component === params.service);
+  if (params.contractor) {
+    programs = programs.filter((program) =>
+      program.prime_contractors.some((contractor) => contractor.name === params.contractor),
+    );
+  }
+  if (params.review === "true") programs = programs.filter((program) => program.needs_review);
+  if (params.cohort === "growth") programs = programs.filter((program) => program.computed.absolute_change_26_to_27 > 0);
+  if (params.cohort === "decline") programs = programs.filter((program) => program.computed.absolute_change_26_to_27 < 0);
+  if (params.funding === "rdte") programs = programs.filter((program) => program.computed.fy2027_rdte > 0);
+  if (params.funding === "procurement") programs = programs.filter((program) => program.computed.fy2027_procurement > 0);
+
+  const sort = params.sort ?? "fy2027";
+  programs.sort((a, b) => {
+    if (sort === "growth") return b.computed.absolute_change_26_to_27 - a.computed.absolute_change_26_to_27;
+    if (sort === "decline") return a.computed.absolute_change_26_to_27 - b.computed.absolute_change_26_to_27;
+    if (sort === "name") return a.name.localeCompare(b.name);
+    if (sort === "mission") return a.mission_area.localeCompare(b.mission_area);
+    return b.computed.fy2027_total - a.computed.fy2027_total;
+  });
+  return programs;
+}
+
+export function summary() {
+  const programs = data.programs;
+  return {
+    totalFy2027: programs.reduce((sum, program) => sum + program.computed.fy2027_total, 0),
+    programCount: programs.length,
+    missionCount: data.mission_areas.length,
+    rdteFy2027: programs.reduce((sum, program) => sum + program.computed.fy2027_rdte, 0),
+    procurementFy2027: programs.reduce((sum, program) => sum + program.computed.fy2027_procurement, 0),
+    mandatoryFy2027: programs.reduce(
+      (sum, program) => sum + (program.computed.fy2027_total * program.computed.mandatory_share_fy2027) / 100,
+      0,
+    ),
+    reviewRows: data.funding_rows.filter((row) => row.needs_review).length,
+  };
+}

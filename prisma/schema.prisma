@@ -1,0 +1,189 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Document {
+  id             String    @id
+  title          String
+  fiscalYear     Int       @map("fiscal_year")
+  sourceFilename String    @map("source_filename")
+  sourceType     String    @map("source_type")
+  uploadedAt     DateTime  @default(now()) @map("uploaded_at")
+  programs       Program[]
+
+  @@map("documents")
+}
+
+model MissionArea {
+  id                       String    @id
+  name                     String
+  description              String?
+  fy2027TotalAmountMillions Decimal? @map("fy2027_total_amount_millions")
+  historicalFundingJson    Json?     @map("historical_funding_json")
+  sourcePage               String?   @map("source_page")
+  programs                 Program[]
+
+  @@map("mission_areas")
+}
+
+model Program {
+  id                   String             @id
+  documentId            String             @map("document_id")
+  missionAreaId         String             @map("mission_area_id")
+  name                 String
+  shortName             String?            @map("short_name")
+  serviceOrComponent    String?            @map("service_or_component")
+  pageLabel             String?            @map("page_label")
+  pdfPageNumber         Int?               @map("pdf_page_number")
+  description           String?
+  mission               String?
+  fy2027ProgramSummary  String?            @map("fy2027_program_summary")
+  primeContractorsJson  Json?              @map("prime_contractors_json")
+  notes                 String?
+  sourceText            String?            @map("source_text")
+  confidenceScore       Decimal?           @map("confidence_score")
+  needsReview           Boolean            @default(false) @map("needs_review")
+  createdAt             DateTime           @default(now()) @map("created_at")
+  document              Document           @relation(fields: [documentId], references: [id])
+  missionArea           MissionArea        @relation(fields: [missionAreaId], references: [id])
+  fundingRows           ProgramFunding[]
+  contractors           ProgramContractor[]
+  chunks                DocumentChunk[]
+  sourceRelationships   ProgramRelationship[] @relation("relationship_source")
+  targetRelationships   ProgramRelationship[] @relation("relationship_target")
+  lineItemLinks         ProgramLineItemLink[]
+
+  @@map("programs")
+}
+
+model ProgramFunding {
+  id                          String   @id
+  programId                   String   @map("program_id")
+  fiscalYear                  Int      @map("fiscal_year")
+  fundingStage                String   @map("funding_stage")
+  fundingType                 String   @map("funding_type")
+  discretionaryAmountMillions Decimal? @map("discretionary_amount_millions")
+  mandatoryAmountMillions     Decimal? @map("mandatory_amount_millions")
+  totalAmountMillions         Decimal? @map("total_amount_millions")
+  quantity                    Decimal?
+  serviceOrComponent          String?  @map("service_or_component")
+  lineItemName                String?  @map("line_item_name")
+  sourcePage                  String?  @map("source_page")
+  rawTableText                String?  @map("raw_table_text")
+  confidenceScore             Decimal? @map("confidence_score")
+  needsReview                 Boolean  @default(false) @map("needs_review")
+  program                     Program  @relation(fields: [programId], references: [id])
+
+  @@map("program_funding")
+}
+
+model Contractor {
+  id             String              @id
+  name           String
+  location       String?
+  normalizedName String              @map("normalized_name")
+  programs       ProgramContractor[]
+
+  @@map("contractors")
+}
+
+model ProgramContractor {
+  programId    String     @map("program_id")
+  contractorId String     @map("contractor_id")
+  role         String
+  program      Program    @relation(fields: [programId], references: [id])
+  contractor   Contractor @relation(fields: [contractorId], references: [id])
+
+  @@id([programId, contractorId, role])
+  @@map("program_contractors")
+}
+
+model DocumentChunk {
+  id            String       @id
+  programId     String?      @map("program_id")
+  missionAreaId String?      @map("mission_area_id")
+  pageNumber    Int?         @map("page_number")
+  chunkType     String       @map("chunk_type")
+  text          String
+  program       Program?     @relation(fields: [programId], references: [id])
+
+  @@map("document_chunks")
+}
+
+model ProgramRelationship {
+  id              String   @id
+  sourceProgramId String   @map("source_program_id")
+  targetProgramId String   @map("target_program_id")
+  relationshipType String  @map("relationship_type")
+  score           Decimal
+  explanation     String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  sourceProgram   Program  @relation("relationship_source", fields: [sourceProgramId], references: [id])
+  targetProgram   Program  @relation("relationship_target", fields: [targetProgramId], references: [id])
+
+  @@map("program_relationships")
+}
+
+model BudgetDocument {
+  id                 String           @id
+  title              String
+  fiscalYear         Int              @map("fiscal_year")
+  documentType       String           @map("document_type")
+  serviceOrComponent String?          @map("service_or_component")
+  appropriationType  String?          @map("appropriation_type")
+  sourceFilename     String?          @map("source_filename")
+  sourceUrl          String?          @map("source_url")
+  uploadedAt         DateTime         @default(now()) @map("uploaded_at")
+  lineItems          BudgetLineItem[]
+
+  @@map("budget_documents")
+}
+
+model BudgetLineItem {
+  id                  String                @id
+  documentId          String                @map("document_id")
+  programId           String?               @map("program_id")
+  missionAreaId       String?               @map("mission_area_id")
+  serviceOrComponent  String?               @map("service_or_component")
+  appropriationType   String?               @map("appropriation_type")
+  appropriationAccount String?              @map("appropriation_account")
+  budgetActivity      String?               @map("budget_activity")
+  budgetActivityName  String?               @map("budget_activity_name")
+  programElement      String?               @map("program_element")
+  lineNumber          String?               @map("line_number")
+  lineItemName        String?               @map("line_item_name")
+  projectNumber       String?               @map("project_number")
+  projectName         String?               @map("project_name")
+  fiscalYear          Int?                  @map("fiscal_year")
+  priorYearActual     Decimal?              @map("prior_year_actual")
+  currentYearEnacted  Decimal?              @map("current_year_enacted")
+  budgetYearRequest   Decimal?              @map("budget_year_request")
+  amountMillions      Decimal?              @map("amount_millions")
+  quantity            Decimal?
+  sourcePage          String?               @map("source_page")
+  rawText             String?               @map("raw_text")
+  confidenceScore     Decimal?              @map("confidence_score")
+  needsReview         Boolean               @default(false) @map("needs_review")
+  document            BudgetDocument        @relation(fields: [documentId], references: [id])
+  links               ProgramLineItemLink[]
+
+  @@map("budget_line_items")
+}
+
+model ProgramLineItemLink {
+  id                 String         @id
+  programId          String         @map("program_id")
+  budgetLineItemId   String         @map("budget_line_item_id")
+  relationshipType   String         @map("relationship_type")
+  confidenceScore    Decimal?       @map("confidence_score")
+  explanation        String?
+  program            Program        @relation(fields: [programId], references: [id])
+  budgetLineItem     BudgetLineItem @relation(fields: [budgetLineItemId], references: [id])
+
+  @@map("program_line_item_links")
+}
