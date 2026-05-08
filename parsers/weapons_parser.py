@@ -1,10 +1,7 @@
 from __future__ import annotations
 
 import json
-import math
 import re
-from collections import defaultdict
-from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
@@ -40,6 +37,65 @@ KEYWORDS = [
     "space",
     "strike",
     "deterrence",
+]
+
+STOP_CONTRACTOR_RE = re.compile(
+    r"^(note:|notes:|numbers\b|qty\b|\$m\b|rdt&e\b|procurement\b|subtotal\b|total\b|actual\b|disc\.?\b|mand\.?\b|fy\s*20\d{2}|image courtesy)",
+    re.I,
+)
+LOCATION_ONLY_RE = re.compile(r"^[A-Z][A-Za-z .'-]+,\s*(AL|AZ|CA|CO|CT|FL|GA|IL|IN|LA|MA|MD|ME|MO|MS|NY|OH|OK|OR|PA|RI|SC|TX|UT|VA|WA|WI)\.?(?:\s*\([^)]*\))?$")
+PLACEHOLDER_CONTRACTORS = {
+    "tbd",
+    "multiple competitive contractors",
+    "up to 2 contractors tbd",
+}
+
+COMPANY_PATTERNS = [
+    (r"\bLockheed Martin(?: Corporation| Missiles and Fire Control| Aeronautics)?\b", "Lockheed Martin"),
+    (r"\bThe Boeing Company\b|\bBoeing Defense(?: and Space)?\b|\bBoeing\b", "Boeing"),
+    (r"\bNorthrop Grumman(?: Corporation| Corp\.| Aerospace Systems| Defense Systems)?\b", "Northrop Grumman"),
+    (r"\bRaytheon Missile[s]? & Defense(?:,? a (?:business unit|subsidiary) of RTX|,? a subsidiary of Raytheon Technologies)?\b", "Raytheon"),
+    (r"\bRaytheon Integrated Defense Systems\b|\bRaytheon Company\b|\bRaytheon\b", "Raytheon"),
+    (r"\bRTX Corporation\b|\bRTX\b", "RTX"),
+    (r"\bPratt & Whitney\b", "Pratt & Whitney"),
+    (r"\bHuntington Ingalls Industries\b", "Huntington Ingalls Industries"),
+    (r"\bGeneral Dynamics Land Systems\b", "General Dynamics"),
+    (r"\bGeneral Dynamics(?: Corporation)?\b", "General Dynamics"),
+    (r"\bGeneral Atomics[-– ]Aeronautical Systems(?: Incorporated)?\b|\bGeneral Atomics,? Aeronautical Systems(?: Incorporated)?\b", "General Atomics Aeronautical Systems"),
+    (r"\bBell Helicopter Textron(?:, Incorporated)?\b|\bBell Textron\b", "Bell Textron"),
+    (r"\bBAE Systems\b", "BAE Systems"),
+    (r"\bOshkosh Defense(?:, LLC)?\b|\bOshkosh Corporation\b", "Oshkosh"),
+    (r"\bLeidos Dynetics\b", "Leidos Dynetics"),
+    (r"\bAnduril Industries\b|\bAnduril\b", "Anduril"),
+    (r"\bL-3 Harris\b|\bL3Harris(?: Technologies, Inc\.)?\b|\bL3-Harris Technologies, Inc\.?\b", "L3Harris"),
+    (r"\bRolls-Royce(?: Corporation)?\b", "Rolls-Royce"),
+    (r"\bSikorsky Aircraft Corporation\b|\bSikorsky\b", "Sikorsky"),
+    (r"\bLeonardo\b", "Leonardo"),
+    (r"\bAirbus\b", "Airbus"),
+    (r"\bAeroVironment\b", "AeroVironment"),
+    (r"\bKratos\b", "Kratos"),
+    (r"\bShield AI\b", "Shield AI"),
+    (r"\bKongsberg Defense & Aerospace\b|\bKongsberg\b", "Kongsberg Defense & Aerospace"),
+    (r"\bSIG Sauer\b", "SIG Sauer"),
+    (r"\bRheinmetall\b", "Rheinmetall"),
+    (r"\bAM General\b", "AM General"),
+    (r"\bHDT Global\b", "HDT Global"),
+    (r"\bNavistar\b", "Navistar"),
+    (r"\bCaterpillar\b", "Caterpillar"),
+    (r"\bMack Defense\b", "Mack Defense"),
+    (r"\bAllison Transmission\b", "Allison Transmission"),
+    (r"\bHoneywell\b", "Honeywell"),
+    (r"\bBlue Origin\b", "Blue Origin"),
+    (r"\bSpaceX\b", "SpaceX"),
+    (r"\bUnited Launch Alliance(?: \(ULA\))?\b", "United Launch Alliance"),
+    (r"\bSierra Space\b", "Sierra Space"),
+    (r"\bJacobs\b", "Jacobs"),
+    (r"\bSciTec\b", "SciTec"),
+    (r"\bBollinger Shipyards\b", "Bollinger Shipyards"),
+    (r"\bFincantieri Marinette Marine\b", "Fincantieri Marinette Marine"),
+    (r"\bSchutt Industries(?: Inc\.)?\b", "Schutt Industries"),
+    (r"\bHoward Technologies(?: \(JHT\))?,? Inc\.?\b", "Howard Technologies"),
+    (r"\bRAMSYS GmbH\b", "RAMSYS GmbH"),
 ]
 
 
@@ -104,35 +160,88 @@ def parse_amount_tokens(lines: List[str]) -> Tuple[List[str], List[float]]:
     return name_lines, values
 
 
+def contractor_role_and_line(line: str) -> Tuple[str, str]:
+    role = "prime"
+    if ":" in line and line.index(":") < 42:
+        prefix, remainder = [part.strip() for part in line.split(":", 1)]
+        if not re.search(r"\b(the|by|from|with|against)\b", prefix, flags=re.I):
+            role = prefix.lower()
+            line = remainder
+    if " - " in line and line.index(" - ") < 28:
+        prefix, remainder = [part.strip() for part in line.split(" - ", 1)]
+        role = prefix.lower()
+        line = remainder
+    return role, line
+
+
+def add_company(companies: List[Dict[str, str]], seen: set[str], name: str, role: str) -> None:
+    name = clean_text(name)
+    name = name.strip(" .;:,()")
+    if not name or name.lower() in PLACEHOLDER_CONTRACTORS:
+        return
+    key = name.lower()
+    if key not in seen:
+        companies.append({"name": name, "role": role or "prime"})
+        seen.add(key)
+
+
+def extract_known_companies(line: str, role: str, companies: List[Dict[str, str]], seen: set[str]) -> bool:
+    found = False
+    for pattern, canonical in COMPANY_PATTERNS:
+        if re.search(pattern, line, flags=re.I):
+            add_company(companies, seen, canonical, role)
+            found = True
+    if re.search(r"\bJavelin Joint Venture\b", line, flags=re.I):
+        add_company(companies, seen, "Javelin Joint Venture", role)
+        found = True
+    return found
+
+
+def plausible_company_name(name: str) -> bool:
+    if LOCATION_ONLY_RE.match(name):
+        return False
+    if len(name) > 80 or len(name.split()) > 8:
+        return False
+    if re.search(r"\b(program|funding|table|numbers|remaining|facility|reflect|include|efforts|reported)\b", name, flags=re.I):
+        return False
+    return bool(
+        re.search(
+            r"\b(corporation|corp\.?|company|systems|industries|defense|technologies|aerospace|inc\.?|llc|ltd|martin|boeing|raytheon|northrop|general dynamics)\b",
+            name,
+            flags=re.I,
+        )
+    )
+
+
 def extract_companies(raw: str) -> List[Dict[str, str]]:
-    raw = clean_text(raw)
+    raw = raw.replace("–", "-")
     if not raw:
         return []
-    candidates = []
-    for line in re.split(r"\n| {2,}", raw):
-        line = line.strip(" ;")
+    companies: List[Dict[str, str]] = []
+    seen: set[str] = set()
+    for line in raw.splitlines():
+        line = clean_text(line).strip(" ;")
         if not line:
             continue
-        for role_prefix in ["Airframe:", "Engine:", "Ground System:", "Interceptor:", "Launcher:"]:
-            line = line.replace(role_prefix, role_prefix + " ")
-        pieces = re.split(r"\)\s+and\s+| and (?=[A-Z][A-Za-z0-9& -]+(?:Corporation|Corp|Company|Systems|Defense|Industries|Technologies|Missiles|Martin|Boeing|RTX|Harris|Dynamics))", line)
-        candidates.extend(pieces)
-    companies = []
-    seen = set()
-    for item in candidates:
-        role = "prime"
-        if ":" in item and item.index(":") < 24:
-            role, item = [part.strip() for part in item.split(":", 1)]
-            role = role.lower()
-        name = item.split(";")[0].strip(" ()")
-        name = re.sub(r"^(Prime Contractor\(s\):|Prime Contractor:)\s*", "", name).strip()
-        if not name or len(name) < 3:
+        if STOP_CONTRACTOR_RE.search(line):
+            break
+        if LOCATION_ONLY_RE.match(line):
             continue
-        if name.lower().startswith(("waco,", "orlando,", "tucson,", "newport", "bethesda", "arlington")):
+        role, company_line = contractor_role_and_line(line)
+        if extract_known_companies(company_line, role, companies, seen):
             continue
-        if name not in seen:
-            companies.append({"name": name, "role": role})
-            seen.add(name)
+        if " has been " in company_line:
+            company_line = company_line.split(" has been ", 1)[1]
+        elif " produced by " in company_line:
+            company_line = company_line.split(" produced by ", 1)[1]
+        elif " manufactured by " in company_line:
+            company_line = company_line.split(" manufactured by ", 1)[1]
+        for item in re.split(r"\)\s+and\s+| and (?=[A-Z])", company_line):
+            name = item.split(";")[0].strip(" ()")
+            name = re.sub(r"^(Prime Contractor\(s\):|Prime Contractor:)\s*", "", name).strip()
+            name = re.sub(r",\s*[A-Z][A-Za-z .'-]+,?\s*(AL|AZ|CA|CO|CT|FL|GA|IL|IN|LA|MA|MD|ME|MO|MS|NY|OH|OK|OR|PA|RI|SC|TX|UT|VA|WA|WI)\.?$", "", name)
+            if plausible_company_name(name):
+                add_company(companies, seen, name, role)
     return companies[:8]
 
 
