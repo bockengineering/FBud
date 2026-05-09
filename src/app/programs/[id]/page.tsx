@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { AppShell } from "@/components/AppShell";
 import { AppropriationsTracker } from "@/components/AppropriationsTracker";
+import { BudgetLineItemsPanel } from "@/components/BudgetLineItemsPanel";
 import { FundingBars, FundingSplit } from "@/components/FundingCharts";
 import { MetricCard } from "@/components/MetricCard";
 import { RelatedPrograms } from "@/components/RelatedPrograms";
@@ -134,12 +135,7 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
                 ))}
               </CardContent>
             </Card>
-            <Card className="border-white/10 bg-white/[0.045] shadow-none">
-              <CardHeader><CardTitle className="text-white">Budget Line Items</CardTitle></CardHeader>
-              <CardContent className="text-slate-400">
-                Line-item data will appear here after R-1, P-1, O-1, or justification book ingestion.
-              </CardContent>
-            </Card>
+            <BudgetLineItemsPanel programId={program.id} />
             <RelatedPrograms programId={program.id} />
             <Collapsible>
               <Card className="border-white/10 bg-white/[0.045] shadow-none">

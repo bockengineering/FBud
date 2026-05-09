@@ -84,6 +84,87 @@ export type ProgramRelationship = {
   explanation: string;
 };
 
+export type BudgetDocument = {
+  id: string;
+  title: string;
+  fiscal_year: number;
+  document_type: string;
+  service_or_component: string | null;
+  appropriation_type: string | null;
+  source_filename: string | null;
+  source_url: string | null;
+  sheet_name?: string;
+  row_count?: number;
+  included_in_toa_total_millions?: number | null;
+  displayed_total_millions?: number | null;
+  parser_confidence?: number;
+};
+
+export type BudgetLineItem = {
+  id: string;
+  document_id: string;
+  document_type: string;
+  program_id: string | null;
+  mission_area_id: string | null;
+  service_or_component: string | null;
+  appropriation_type: string | null;
+  appropriation_account: string | null;
+  account_title: string | null;
+  organization: string | null;
+  budget_activity: string | null;
+  budget_activity_name: string | null;
+  budget_subactivity: string | null;
+  budget_subactivity_name: string | null;
+  program_element: string | null;
+  line_number: string | null;
+  line_item_name: string;
+  project_number: string | null;
+  project_name: string | null;
+  cost_type: string | null;
+  cost_type_title: string | null;
+  add_non_add: string | null;
+  include_in_toa: boolean;
+  include_in_toa_label: string | null;
+  classification: string | null;
+  fiscal_year: number | null;
+  prior_year_actual: number | null;
+  current_year_enacted: number | null;
+  budget_year_request: number | null;
+  amount_millions: number | null;
+  quantity: number | null;
+  fy2025_actual_amount_millions: number | null;
+  fy2025_reconciliation_amount_millions: number | null;
+  fy2025_total_amount_millions: number | null;
+  fy2026_discretionary_enacted_amount_millions: number | null;
+  fy2026_mandatory_amount_millions: number | null;
+  fy2026_total_amount_millions: number | null;
+  fy2027_discretionary_request_amount_millions: number | null;
+  fy2027_mandatory_request_amount_millions: number | null;
+  fy2027_total_amount_millions: number | null;
+  fy2025_actual_quantity: number | null;
+  fy2025_reconciliation_quantity: number | null;
+  fy2025_total_quantity: number | null;
+  fy2026_discretionary_enacted_quantity: number | null;
+  fy2026_mandatory_quantity: number | null;
+  fy2026_total_quantity: number | null;
+  fy2027_discretionary_request_quantity: number | null;
+  fy2027_mandatory_request_quantity: number | null;
+  fy2027_total_quantity: number | null;
+  source_page: string | null;
+  raw_text: string | null;
+  confidence_score: number | null;
+  needs_review: boolean;
+};
+
+export type ProgramLineItemLink = {
+  id: string;
+  program_id: string;
+  budget_line_item_id: string;
+  relationship_type: string;
+  confidence_score: number | null;
+  explanation: string | null;
+};
+
 export type AppropriationStage = {
   id: "request" | "house" | "senate" | "conference" | "enacted";
   label: string;
@@ -112,5 +193,7 @@ export type BudgetDataset = {
   contractors: Contractor[];
   document_chunks: Array<Record<string, unknown>>;
   program_relationships: ProgramRelationship[];
-  budget_line_items: Array<Record<string, unknown>>;
+  budget_documents?: BudgetDocument[];
+  budget_line_items: BudgetLineItem[];
+  program_line_item_links?: ProgramLineItemLink[];
 };

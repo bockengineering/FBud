@@ -5,11 +5,11 @@ FBud is a dark, analyst-focused web app for navigating the FY2027 Department of 
 ## What is included
 
 - Next.js App Router, TypeScript, Tailwind, shadcn/ui, Recharts
-- Python PDF ingestion with PyMuPDF
+- Python PDF ingestion with PyMuPDF and Excel display ingestion with openpyxl
 - Prisma schema and PostgreSQL migration for Supabase or local Postgres
-- Dashboard, program explorer, program detail pages, mission-area pages, contractor pages, parser review, and sources
+- Dashboard, program explorer, budget-line explorer, program detail pages, mission-area pages, contractor pages, parser review, and sources
 - Appropriations tracking from President's Budget request through House, Senate, conference, and final enacted amounts
-- Future-ready tables for R-1, P-1, O-1, justification books, budget line items, and program-line links
+- R-1, P-1, and O-1 display workbooks normalized into budget line items with program-line links
 - Source-page citations and raw extracted text for auditability
 
 ## Setup
@@ -18,21 +18,24 @@ FBud is a dark, analyst-focused web app for navigating the FY2027 Department of 
 npm install
 cp .env.example .env.local
 npm run db:migrate
-npm run ingest:weapons
+npm run ingest:all
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
-## Source PDF
+## Source Files
 
-Place the source file at:
+Place source files at:
 
 ```bash
 data/FY2027_Weapons.pdf
+data/r1_display.xlsx
+data/p1_display.xlsx
+data/o1_display.xlsx
 ```
 
-The ingest command parses the PDF page by page and writes the normalized MVP seed artifact to:
+The ingest commands parse the Weapons Book PDF and R-1/P-1/O-1 display workbooks, then write the normalized MVP seed artifact to:
 
 ```bash
 src/data/weapons-data.json
@@ -40,7 +43,7 @@ src/data/weapons-data.json
 
 This committed seed lets Vercel render the first version without private database credentials. The Prisma schema and migrations define the production Postgres/Supabase model for durable storage and future budget-document ingestion.
 
-When `DATABASE_URL` is set and reachable, `npm run ingest:weapons` also loads the parsed data into Prisma/Postgres. To load the committed seed without reparsing the PDF, run:
+When `DATABASE_URL` is set and reachable, ingest commands also load the parsed data into Prisma/Postgres. To load the committed seed without reparsing source documents, run:
 
 ```bash
 npm run db:seed
@@ -53,6 +56,8 @@ npm install
 cp .env.example .env.local
 npm run db:migrate
 npm run ingest:weapons
+npm run ingest:budget-lines
+npm run ingest:all
 npm run dev
 npm run build
 vercel deploy
@@ -77,7 +82,9 @@ Parser interfaces live in `parsers/`:
 - `p1_parser.py`
 - `o1_parser.py`
 
-Each parser is intended to output a normalized shape containing document metadata, programs, line items, funding rows, contractors, source citations, raw text chunks, and parser confidence.
+Each parser outputs a normalized shape containing document metadata, programs when available, line items, funding rows, contractors when available, source citations, raw text chunks, and parser confidence.
+
+R-1, P-1, and O-1 display rows are stored as budget line items. The app preserves whether each row is included in TOA (`Y`/`Add`) or is a memo/non-add row, keeps the FY2025/FY2026/FY2027 display columns, and links high-confidence rows back to Weapons Book programs.
 
 ## Budget Logic Notes
 
@@ -89,7 +96,7 @@ Each parser is intended to output a normalized shape containing document metadat
 
 ## Future Sources
 
-The next logical sources are R-1 and P-1 documents. R-1 should add RDT&E program elements, budget activities, project numbers, and justification-book links. P-1 should add procurement line numbers, quantities, and appropriation-account depth.
+The next logical sources are the RDT&E and procurement justification books. They should add narrative detail, project numbers, budget activities, account-level context, and stronger line-item links beneath the existing R-1/P-1 display rows.
 
 Legislative tracking sources should follow as soon as they are published:
 

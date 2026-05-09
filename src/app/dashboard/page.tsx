@@ -6,11 +6,12 @@ import { MetricCard } from "@/components/MetricCard";
 import { ProgramCard } from "@/components/ProgramCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { delta, getDataset, money, summary } from "@/lib/data";
+import { budgetLineSummary, delta, getDataset, money, summary } from "@/lib/data";
 
 export default function DashboardPage() {
   const data = getDataset();
   const totals = summary();
+  const lineSummary = budgetLineSummary();
   const topPrograms = [...data.programs].sort((a, b) => b.computed.fy2027_total - a.computed.fy2027_total).slice(0, 10);
   const increases = [...data.programs].sort((a, b) => b.computed.absolute_change_26_to_27 - a.computed.absolute_change_26_to_27).slice(0, 6);
   const decreases = [...data.programs].sort((a, b) => a.computed.absolute_change_26_to_27 - b.computed.absolute_change_26_to_27).slice(0, 6);
@@ -25,9 +26,10 @@ export default function DashboardPage() {
             Executive map of weapon-system program funding across FY2025 actuals, FY2026 enacted/current funding, and the FY2027 President&apos;s Budget request.
           </p>
         </div>
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
           <MetricCard label="FY2027 total" value={money(totals.totalFy2027)} detail="Across extracted programs" />
           <MetricCard label="Programs" value={`${totals.programCount}`} detail="Parsed program pages" href="/programs" />
+          <MetricCard label="Budget lines" value={`${lineSummary.lineItemCount}`} detail="R-1 / P-1 / O-1 rows" href="/budget-lines" />
           <MetricCard label="Mission areas" value={`${totals.missionCount}`} detail="Portfolio chapters" href="/mission-areas" />
           <MetricCard label="RDT&E" value={money(totals.rdteFy2027)} detail="Parsed FY2027 split" href="/programs?funding=rdte" />
           <MetricCard label="Procurement" value={money(totals.procurementFy2027)} detail="Parsed FY2027 split" href="/programs?funding=procurement" />
