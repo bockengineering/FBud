@@ -77,6 +77,9 @@ export default async function BudgetLinesPage({ searchParams }: { searchParams: 
           </div>
           <div className="flex gap-2">
             <Button asChild variant="outline" className="border-white/10 bg-white/5 text-white hover:bg-white/10">
+              <Link href="/curation">Curate</Link>
+            </Button>
+            <Button asChild variant="outline" className="border-white/10 bg-white/5 text-white hover:bg-white/10">
               <Link href="/budget-lines?linked=linked">Linked</Link>
             </Button>
             <Button asChild variant="outline" className="border-white/10 bg-white/5 text-white hover:bg-white/10">

@@ -7,7 +7,7 @@ FBud is a dark, analyst-focused web app for navigating the FY2027 Department of 
 - Next.js App Router, TypeScript, Tailwind, shadcn/ui, Recharts
 - Python PDF ingestion with PyMuPDF and Excel display ingestion with openpyxl
 - Prisma schema and PostgreSQL migration for Supabase or local Postgres
-- Dashboard, program explorer, RDT&E category map, budget-line explorer, program detail pages, mission-area pages, contractor pages, parser review, and sources
+- Dashboard, program explorer, RDT&E category map, budget-line explorer, manual curation workspace, program detail pages, mission-area pages, contractor pages, parser review, and sources
 - Appropriations tracking from President's Budget request through House, Senate, conference, and final enacted amounts
 - R-1, P-1, and O-1 display workbooks normalized into budget line items with program-line links
 - Source-page citations and raw extracted text for auditability
@@ -85,6 +85,18 @@ Parser interfaces live in `parsers/`:
 Each parser outputs a normalized shape containing document metadata, programs when available, line items, funding rows, contractors when available, source citations, raw text chunks, and parser confidence.
 
 R-1, P-1, and O-1 display rows are stored as budget line items. The app preserves whether each row is included in TOA (`Y`/`Add`) or is a memo/non-add row, keeps the FY2025/FY2026/FY2027 display columns, and links high-confidence rows back to Weapons Book programs.
+
+## Manual Curation
+
+Open `/curation` to review and override line-item links. The curation workspace can:
+
+- link or unlink R-1/P-1/O-1 rows to Weapons Book programs
+- override a parsed line-item name or service/agency label
+- mark a row reviewed or needing review
+- store analyst notes
+- export/import the override JSON
+
+In the current MVP, curation overrides are browser-local so the public app can run without auth or write access. Export the override JSON to preserve or share analyst edits. A future database-backed admin mode should persist these same overrides in Postgres.
 
 ## Budget Logic Notes
 

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, Building2, FileSearch, Files, FlaskConical, Landmark, LayoutDashboard, ListTree, Radar, Search } from "lucide-react";
+import { BarChart3, Building2, FileSearch, Files, FlaskConical, Landmark, LayoutDashboard, ListChecks, ListTree, Radar, Search } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,6 +8,7 @@ const nav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/programs", label: "Programs", icon: Radar },
   { href: "/budget-lines", label: "Budget Lines", icon: ListTree },
+  { href: "/curation", label: "Curation", icon: ListChecks },
   { href: "/rdte", label: "RDT&E", icon: FlaskConical },
   { href: "/appropriations", label: "Appropriations", icon: Landmark },
   { href: "/mission-areas", label: "Mission Areas", icon: BarChart3 },

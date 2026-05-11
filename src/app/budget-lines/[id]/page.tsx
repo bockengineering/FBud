@@ -5,6 +5,7 @@ import { AppShell } from "@/components/AppShell";
 import { BudgetLineAmountTrend, BudgetLineRequestSplit } from "@/components/BudgetLineCharts";
 import { MetricCard } from "@/components/MetricCard";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Separator } from "@/components/ui/separator";
@@ -59,6 +60,9 @@ export default async function BudgetLineDetailPage({ params }: { params: Promise
                 {document?.title ?? "Budget display"} row {item.source_page?.replace(/^.* row /, "") || "n/a"}.
                 Values are request/enacted display amounts in millions, not awards or contractor revenue.
               </p>
+              <Button asChild className="mt-4 bg-cyan-300 text-slate-950 hover:bg-cyan-200">
+                <Link href={`/curation?line=${item.id}`}>Curate link or fields</Link>
+              </Button>
             </section>
 
             <div className="grid gap-3 md:grid-cols-4">

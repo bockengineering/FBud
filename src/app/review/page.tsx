@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { AppShell } from "@/components/AppShell";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getBudgetDocument, getBudgetLineItems, getDataset, lineItemRequestTotal, money, programForBudgetLineItem, source } from "@/lib/data";
@@ -19,6 +20,9 @@ export default function ReviewPage() {
           <p className="text-sm uppercase tracking-[0.22em] text-cyan-300">Parser QA</p>
           <h1 className="mt-2 text-3xl font-semibold text-white">Review Queue</h1>
           <p className="mt-2 text-slate-400">Rows here preserve the raw source text and should be checked before downstream analysis.</p>
+          <Button asChild className="mt-4 bg-cyan-300 text-slate-950 hover:bg-cyan-200">
+            <Link href="/curation">Open curation workspace</Link>
+          </Button>
         </div>
         <Card className="border-white/10 bg-white/[0.045] shadow-none">
           <CardHeader><CardTitle className="text-white">Programs Needing Review</CardTitle></CardHeader>
@@ -77,6 +81,9 @@ export default function ReviewPage() {
                       <TableCell>{money(lineItemRequestTotal(item))}</TableCell>
                       <TableCell>
                         {linkedProgram ? <Link href={`/programs/${linkedProgram.id}`} className="text-cyan-200">{linkedProgram.short_name}</Link> : <span className="text-slate-500">Unlinked</span>}
+                        <div className="mt-1">
+                          <Link href={`/curation?line=${item.id}`} className="text-xs text-cyan-300 hover:text-cyan-100">Curate</Link>
+                        </div>
                       </TableCell>
                       <TableCell className="text-slate-500">{document?.source_filename} · {item.source_page}</TableCell>
                     </TableRow>
