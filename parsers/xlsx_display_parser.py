@@ -71,24 +71,35 @@ def _first(raw: dict[str, Any], names: list[str]) -> Any:
     return None
 
 
+def _defense_wide_label(organization: Any) -> str:
+    org = str(organization or "").strip().upper()
+    if org and org != "D":
+        return f"Defense-Wide / {org}"
+    return "Defense-Wide"
+
+
 def _infer_service(organization: Any, account_title: Any) -> str | None:
     org = str(organization or "").strip().upper()
-    if org in ORG_TO_SERVICE:
-        return ORG_TO_SERVICE[org]
 
     title = str(account_title or "").lower()
     if "space force" in title:
         return "US Space Force"
+    if "marine corps" in title and "navy" in title:
+        return "US Navy / US Marine Corps"
+    if "marine corps" in title:
+        return "US Marine Corps"
     if "air force" in title:
         return "US Air Force"
     if "navy" in title:
         return "US Navy"
-    if "marine corps" in title:
-        return "US Marine Corps"
     if "army" in title:
         return "US Army"
     if "defense-wide" in title or "defense wide" in title:
-        return "Defense-Wide"
+        return _defense_wide_label(org)
+    if org in ORG_TO_SERVICE:
+        return ORG_TO_SERVICE[org]
+    if org:
+        return _defense_wide_label(org)
     return None
 
 

@@ -82,6 +82,8 @@ export default async function BudgetLineDetailPage({ params }: { params: Promise
             <Card className="border-white/10 bg-white/[0.045] shadow-none">
               <CardHeader><CardTitle className="text-white">Budget Line Context</CardTitle></CardHeader>
               <CardContent className="grid gap-3 text-sm text-slate-300 md:grid-cols-2">
+                <div><span className="text-slate-500">Service / agency:</span> {item.service_or_component || "n/a"}</div>
+                <div><span className="text-slate-500">Organization code:</span> {item.organization || "n/a"}</div>
                 <div><span className="text-slate-500">Appropriation account:</span> {item.appropriation_account}</div>
                 <div><span className="text-slate-500">Account title:</span> {item.account_title}</div>
                 <div><span className="text-slate-500">Budget activity:</span> {item.budget_activity} {item.budget_activity_name}</div>

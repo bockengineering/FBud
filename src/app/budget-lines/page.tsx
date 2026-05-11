@@ -123,9 +123,9 @@ export default async function BudgetLinesPage({ searchParams }: { searchParams: 
             </SelectContent>
           </Select>
           <Select name="service" defaultValue={filters.service || "all"}>
-            <SelectTrigger className="border-white/10 bg-black/20"><SelectValue placeholder="Service" /></SelectTrigger>
+            <SelectTrigger className="border-white/10 bg-black/20"><SelectValue placeholder="Service / agency" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All services</SelectItem>
+              <SelectItem value="all">All services / agencies</SelectItem>
               {services.map((service) => <SelectItem key={service} value={service}>{service}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -167,7 +167,7 @@ export default async function BudgetLinesPage({ searchParams }: { searchParams: 
                 <TableRow className="border-white/10 hover:bg-transparent">
                   <TableHead>Line item</TableHead>
                   <TableHead>Doc</TableHead>
-                  <TableHead>Service</TableHead>
+                  <TableHead>Service / agency</TableHead>
                   <TableHead>Account</TableHead>
                   <TableHead className="text-right">FY2027</TableHead>
                   <TableHead className="text-right">26 to 27</TableHead>

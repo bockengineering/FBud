@@ -136,13 +136,13 @@ export default async function RdtePage({ searchParams }: { searchParams: SearchP
         {hasFilters ? (
           <div className="flex flex-wrap items-center gap-2 rounded-md border border-cyan-300/20 bg-cyan-300/[0.05] p-3">
             <span className="text-sm text-slate-400">Active RDT&E filter:</span>
-            {filters.service ? <Badge className="bg-cyan-400/10 text-cyan-200">Service: {filters.service}</Badge> : null}
+            {filters.service ? <Badge className="bg-cyan-400/10 text-cyan-200">Service / agency: {filters.service}</Badge> : null}
             {filters.activityName ? <Badge className="bg-cyan-400/10 text-cyan-200">Category: {filters.activity} {filters.activityName}</Badge> : null}
             <Link href="/rdte" className="ml-auto text-sm text-cyan-300 hover:text-cyan-100">Clear filters</Link>
           </div>
         ) : (
           <div className="rounded-md border border-white/10 bg-white/[0.035] p-3 text-sm text-slate-400">
-            Click a category bar or service bar to filter the full page. Click the same bar again to remove that filter.
+            Click a category bar or service/agency bar to filter the full page. Click the same bar again to remove that filter.
           </div>
         )}
 
@@ -232,7 +232,7 @@ export default async function RdtePage({ searchParams }: { searchParams: SearchP
           </Card>
 
           <Card className="border-white/10 bg-white/[0.045] shadow-none">
-            <CardHeader><CardTitle className="text-white">R-1 Request by Service</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-white">R-1 Request by Service / Agency</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <RdteServiceChart services={services} activeService={filters.service} />
               <div className="grid gap-2">
@@ -263,7 +263,7 @@ export default async function RdtePage({ searchParams }: { searchParams: SearchP
                 <TableRow className="border-white/10 hover:bg-transparent">
                   <TableHead>Line item</TableHead>
                   <TableHead>Category</TableHead>
-                  <TableHead>Service</TableHead>
+                  <TableHead>Service / agency</TableHead>
                   <TableHead className="text-right">FY2027</TableHead>
                   <TableHead className="text-right">26 to 27</TableHead>
                   <TableHead>Program</TableHead>
