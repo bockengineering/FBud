@@ -567,7 +567,6 @@ export function CurationWorkspace({
                   <div className="flex justify-between gap-3"><span>FY2027 request</span><span className="text-white">{money(selectedRecord.item.amount_millions)}</span></div>
                   <div className="flex justify-between gap-3"><span>Line number</span><span className="text-white">{selectedRecord.item.line_number || "n/a"}</span></div>
                   <div className="flex justify-between gap-3"><span>Organization</span><span className="text-white">{selectedRecord.item.organization || "n/a"}</span></div>
-                  <div className="flex justify-between gap-3"><span>Confidence</span><span className="text-white">{((selectedRecord.item.confidence_score ?? 0) * 100).toFixed(0)}%</span></div>
                   <div className="flex gap-3 pt-2">
                     <Link href={`/budget-lines/${selectedRecord.item.id}`} className="text-cyan-200 hover:text-cyan-100">Open line detail</Link>
                     {selectedProgram ? <Link href={`/programs/${selectedProgram.id}`} className="text-cyan-200 hover:text-cyan-100">Open program</Link> : null}

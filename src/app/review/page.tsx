@@ -1,7 +1,6 @@
 import Link from "next/link";
 
 import { AppShell } from "@/components/AppShell";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -33,7 +32,6 @@ export default function ReviewPage() {
                   <TableHead>Program</TableHead>
                   <TableHead>Mission</TableHead>
                   <TableHead>FY2027</TableHead>
-                  <TableHead>Confidence</TableHead>
                   <TableHead>Source</TableHead>
                 </TableRow>
               </TableHeader>
@@ -43,7 +41,6 @@ export default function ReviewPage() {
                     <TableCell><Link href={`/programs/${program.id}`} className="font-medium text-cyan-200">{program.name}</Link></TableCell>
                     <TableCell className="text-slate-400">{program.mission_area}</TableCell>
                     <TableCell>{money(program.computed.fy2027_total)}</TableCell>
-                    <TableCell><Badge className="bg-orange-400/10 text-orange-200">{(program.confidence_score * 100).toFixed(0)}%</Badge></TableCell>
                     <TableCell>{source(program.page_label)}</TableCell>
                   </TableRow>
                 ))}

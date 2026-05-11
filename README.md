@@ -82,9 +82,9 @@ Parser interfaces live in `parsers/`:
 - `p1_parser.py`
 - `o1_parser.py`
 
-Each parser outputs a normalized shape containing document metadata, programs when available, line items, funding rows, contractors when available, source citations, raw text chunks, and parser confidence.
+Each parser outputs a normalized shape containing document metadata, programs when available, line items, funding rows, contractors when available, source citations, and raw text chunks.
 
-R-1, P-1, and O-1 display rows are stored as budget line items. The app preserves whether each row is included in TOA (`Y`/`Add`) or is a memo/non-add row, keeps the FY2025/FY2026/FY2027 display columns, and links high-confidence rows back to Weapons Book programs.
+R-1, P-1, and O-1 display rows are stored as budget line items. The app preserves whether each row is included in TOA (`Y`/`Add`) or is a memo/non-add row, keeps the FY2025/FY2026/FY2027 display columns, and links matching rows back to Weapons Book programs.
 
 ## Manual Curation
 

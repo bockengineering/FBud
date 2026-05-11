@@ -142,7 +142,7 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
                 <CardHeader>
                   <CollapsibleTrigger className="text-left">
                     <CardTitle className="text-white">Raw Source Excerpt</CardTitle>
-                    <p className="mt-1 text-sm text-slate-400">Parser confidence {(program.confidence_score * 100).toFixed(0)}%, {source(program.page_label)}</p>
+                    <p className="mt-1 text-sm text-slate-400">{source(program.page_label)}</p>
                   </CollapsibleTrigger>
                   <div className="pt-2">
                     <SourceDrawer

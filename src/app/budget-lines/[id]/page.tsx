@@ -159,7 +159,6 @@ export default async function BudgetLineDetailPage({ params }: { params: Promise
                   <div className="flex justify-between"><span className="text-slate-400">TOA status</span><span>{item.include_in_toa ? "Included" : "Memo/non-add"}</span></div>
                   <div className="flex justify-between"><span className="text-slate-400">Source</span><span className="text-right">{document?.source_filename}</span></div>
                   <div className="flex justify-between"><span className="text-slate-400">Row</span><span>{item.source_page}</span></div>
-                  <div className="flex justify-between"><span className="text-slate-400">Confidence</span><span>{((item.confidence_score ?? 0) * 100).toFixed(0)}%</span></div>
                   <div>
                     <div className="text-slate-400">Linked program</div>
                     {linkedProgram ? (
