@@ -106,6 +106,12 @@ export function lineItemRequestTotal(item: BudgetLineItem) {
   return item.fy2027_total_amount_millions ?? item.amount_millions ?? 0;
 }
 
+export function lineItemPercentChange(item: BudgetLineItem) {
+  const prior = item.fy2026_total_amount_millions ?? 0;
+  if (!prior) return 0;
+  return (lineItemDelta(item) / prior) * 100;
+}
+
 export function budgetLineSearch(item: BudgetLineItem, query: string) {
   const program = programForBudgetLineItem(item);
   const document = getBudgetDocument(item.document_id);
@@ -133,6 +139,8 @@ export function filteredBudgetLineItems(params: {
   document?: string;
   appropriation?: string;
   service?: string;
+  activity?: string;
+  activityName?: string;
   linked?: string;
   toa?: string;
   sort?: string;
@@ -142,6 +150,8 @@ export function filteredBudgetLineItems(params: {
   if (params.document) items = items.filter((item) => item.document_id === params.document || item.document_type === params.document);
   if (params.appropriation) items = items.filter((item) => item.appropriation_type === params.appropriation);
   if (params.service) items = items.filter((item) => item.service_or_component === params.service);
+  if (params.activity) items = items.filter((item) => item.budget_activity === params.activity);
+  if (params.activityName) items = items.filter((item) => item.budget_activity_name === params.activityName);
   if (params.linked === "linked") items = items.filter((item) => Boolean(item.program_id ?? linkForBudgetLineItem(item.id)?.program_id));
   if (params.linked === "unlinked") items = items.filter((item) => !Boolean(item.program_id ?? linkForBudgetLineItem(item.id)?.program_id));
   if (params.toa === "included") items = items.filter((item) => item.include_in_toa);
@@ -156,6 +166,147 @@ export function filteredBudgetLineItems(params: {
     return lineItemRequestTotal(b) - lineItemRequestTotal(a);
   });
   return items;
+}
+
+export function rdteLineItems() {
+  return getBudgetLineItems().filter((item) => item.document_type === "r1" && item.include_in_toa);
+}
+
+export function rdteCategorySummary() {
+  const items = rdteLineItems();
+  const categories = new Map<
+    string,
+    {
+      id: string;
+      activity: string;
+      name: string;
+      label: string;
+      fy2025: number;
+      fy2026: number;
+      fy2027: number;
+      discretionary: number;
+      mandatory: number;
+      count: number;
+      linkedCount: number;
+    }
+  >();
+
+  for (const item of items) {
+    const activity = item.budget_activity || "Uncategorized";
+    const name = item.budget_activity_name || "Uncategorized";
+    const id = `${activity}-${name}`.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const current = categories.get(id) ?? {
+      id,
+      activity,
+      name,
+      label: `${activity} ${name}`.trim(),
+      fy2025: 0,
+      fy2026: 0,
+      fy2027: 0,
+      discretionary: 0,
+      mandatory: 0,
+      count: 0,
+      linkedCount: 0,
+    };
+    current.fy2025 += item.fy2025_total_amount_millions ?? 0;
+    current.fy2026 += item.fy2026_total_amount_millions ?? 0;
+    current.fy2027 += lineItemRequestTotal(item);
+    current.discretionary += item.fy2027_discretionary_request_amount_millions ?? 0;
+    current.mandatory += item.fy2027_mandatory_request_amount_millions ?? 0;
+    current.count += 1;
+    if (item.program_id ?? linkForBudgetLineItem(item.id)?.program_id) current.linkedCount += 1;
+    categories.set(id, current);
+  }
+
+  const total = items.reduce((sum, item) => sum + lineItemRequestTotal(item), 0);
+  return Array.from(categories.values())
+    .map((category) => ({
+      ...category,
+      delta: category.fy2027 - category.fy2026,
+      percentChange: category.fy2026 ? ((category.fy2027 - category.fy2026) / category.fy2026) * 100 : 0,
+      share: total ? (category.fy2027 / total) * 100 : 0,
+      mandatoryShare: category.fy2027 ? (category.mandatory / category.fy2027) * 100 : 0,
+    }))
+    .sort((a, b) => b.fy2027 - a.fy2027);
+}
+
+export function rdteServiceSummary() {
+  const services = new Map<
+    string,
+    {
+      service: string;
+      fy2025: number;
+      fy2026: number;
+      fy2027: number;
+      discretionary: number;
+      mandatory: number;
+      count: number;
+    }
+  >();
+
+  for (const item of rdteLineItems()) {
+    const service = item.service_or_component || "Unspecified";
+    const current = services.get(service) ?? {
+      service,
+      fy2025: 0,
+      fy2026: 0,
+      fy2027: 0,
+      discretionary: 0,
+      mandatory: 0,
+      count: 0,
+    };
+    current.fy2025 += item.fy2025_total_amount_millions ?? 0;
+    current.fy2026 += item.fy2026_total_amount_millions ?? 0;
+    current.fy2027 += lineItemRequestTotal(item);
+    current.discretionary += item.fy2027_discretionary_request_amount_millions ?? 0;
+    current.mandatory += item.fy2027_mandatory_request_amount_millions ?? 0;
+    current.count += 1;
+    services.set(service, current);
+  }
+
+  return Array.from(services.values())
+    .map((service) => ({
+      ...service,
+      delta: service.fy2027 - service.fy2026,
+      mandatoryShare: service.fy2027 ? (service.mandatory / service.fy2027) * 100 : 0,
+    }))
+    .sort((a, b) => b.fy2027 - a.fy2027);
+}
+
+export function rdteSummary() {
+  const items = rdteLineItems();
+  const fy2025 = items.reduce((sum, item) => sum + (item.fy2025_total_amount_millions ?? 0), 0);
+  const fy2026 = items.reduce((sum, item) => sum + (item.fy2026_total_amount_millions ?? 0), 0);
+  const fy2027 = items.reduce((sum, item) => sum + lineItemRequestTotal(item), 0);
+  const discretionary = items.reduce((sum, item) => sum + (item.fy2027_discretionary_request_amount_millions ?? 0), 0);
+  const mandatory = items.reduce((sum, item) => sum + (item.fy2027_mandatory_request_amount_millions ?? 0), 0);
+  const linked = items.filter((item) => Boolean(item.program_id ?? linkForBudgetLineItem(item.id)?.program_id)).length;
+
+  return {
+    rowCount: items.length,
+    categoryCount: rdteCategorySummary().length,
+    linkedCount: linked,
+    fy2025,
+    fy2026,
+    fy2027,
+    delta: fy2027 - fy2026,
+    percentChange: fy2026 ? ((fy2027 - fy2026) / fy2026) * 100 : 0,
+    discretionary,
+    mandatory,
+    mandatoryShare: fy2027 ? (mandatory / fy2027) * 100 : 0,
+  };
+}
+
+export function topRdteLineItems(limit = 12) {
+  return [...rdteLineItems()].sort((a, b) => lineItemRequestTotal(b) - lineItemRequestTotal(a)).slice(0, limit);
+}
+
+export function rdteLineItemMovers(limit = 8) {
+  const items = rdteLineItems().filter((item) => lineItemRequestTotal(item) || item.fy2026_total_amount_millions);
+  return {
+    increases: [...items].sort((a, b) => lineItemDelta(b) - lineItemDelta(a)).slice(0, limit),
+    declines: [...items].sort((a, b) => lineItemDelta(a) - lineItemDelta(b)).slice(0, limit),
+  };
 }
 
 export function budgetLineSummary() {

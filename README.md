@@ -7,7 +7,7 @@ FBud is a dark, analyst-focused web app for navigating the FY2027 Department of 
 - Next.js App Router, TypeScript, Tailwind, shadcn/ui, Recharts
 - Python PDF ingestion with PyMuPDF and Excel display ingestion with openpyxl
 - Prisma schema and PostgreSQL migration for Supabase or local Postgres
-- Dashboard, program explorer, budget-line explorer, program detail pages, mission-area pages, contractor pages, parser review, and sources
+- Dashboard, program explorer, RDT&E category map, budget-line explorer, program detail pages, mission-area pages, contractor pages, parser review, and sources
 - Appropriations tracking from President's Budget request through House, Senate, conference, and final enacted amounts
 - R-1, P-1, and O-1 display workbooks normalized into budget line items with program-line links
 - Source-page citations and raw extracted text for auditability

@@ -41,6 +41,8 @@ export default async function BudgetLinesPage({ searchParams }: { searchParams: 
     document: one(params.document),
     appropriation: one(params.appropriation),
     service: one(params.service),
+    activity: one(params.activity),
+    activityName: one(params.activity_name),
     linked: one(params.linked),
     toa: one(params.toa),
     sort: one(params.sort),
@@ -52,6 +54,15 @@ export default async function BudgetLinesPage({ searchParams }: { searchParams: 
   const allItems = getBudgetLineItems();
   const services = Array.from(new Set(allItems.flatMap((item) => (item.service_or_component ? [item.service_or_component] : [])))).sort();
   const appropriations = Array.from(new Set(allItems.flatMap((item) => (item.appropriation_type ? [item.appropriation_type] : [])))).sort();
+  const activities = Array.from(
+    new Map(
+      allItems.flatMap((item) =>
+        item.budget_activity && item.budget_activity_name
+          ? [[item.budget_activity, `${item.budget_activity} ${item.budget_activity_name}`] as const]
+          : [],
+      ),
+    ).entries(),
+  ).sort((a, b) => a[0].localeCompare(b[0]));
 
   return (
     <AppShell>
@@ -83,12 +94,12 @@ export default async function BudgetLinesPage({ searchParams }: { searchParams: 
         </div>
 
         <div className="grid gap-3 md:grid-cols-3">
-          <MetricCard label="RDT&E baseline" value={money(summary.rdteTotal)} detail="R-1 included rows" href="/budget-lines?document=r1" />
+          <MetricCard label="RDT&E baseline" value={money(summary.rdteTotal)} detail="R-1 included rows" href="/rdte" />
           <MetricCard label="Procurement baseline" value={money(summary.procurementTotal)} detail="P-1 included rows" href="/budget-lines?document=p1" />
           <MetricCard label="O&M baseline" value={money(summary.omTotal)} detail="O-1 included rows" href="/budget-lines?document=o1" />
         </div>
 
-        <form className="grid gap-3 rounded-md border border-white/10 bg-white/[0.045] p-3 md:grid-cols-2 xl:grid-cols-7">
+        <form className="grid gap-3 rounded-md border border-white/10 bg-white/[0.045] p-3 md:grid-cols-2 xl:grid-cols-9">
           <Input name="q" defaultValue={filters.q} placeholder="Search line, PE/BLI, account, linked program..." className="border-white/10 bg-black/20 xl:col-span-2" />
           <Select name="document" defaultValue={filters.document || "all"}>
             <SelectTrigger className="border-white/10 bg-black/20"><SelectValue placeholder="Document" /></SelectTrigger>
@@ -102,6 +113,13 @@ export default async function BudgetLinesPage({ searchParams }: { searchParams: 
             <SelectContent>
               <SelectItem value="all">All types</SelectItem>
               {appropriations.map((appropriation) => <SelectItem key={appropriation} value={appropriation}>{appropriation}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select name="activity" defaultValue={filters.activity || "all"}>
+            <SelectTrigger className="border-white/10 bg-black/20"><SelectValue placeholder="Activity" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All activities</SelectItem>
+              {activities.map(([activity, label]) => <SelectItem key={activity} value={activity}>{label}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select name="service" defaultValue={filters.service || "all"}>
@@ -134,6 +152,7 @@ export default async function BudgetLinesPage({ searchParams }: { searchParams: 
 
         <div className="flex flex-wrap gap-2">
           {filters.document ? <Badge className="bg-cyan-400/10 text-cyan-200">Document: {documentLabel(filters.document)}</Badge> : null}
+          {filters.activity ? <Badge className="bg-cyan-400/10 text-cyan-200">Activity: {filters.activityName ?? filters.activity}</Badge> : null}
           {filters.linked ? <Badge className="bg-slate-400/10 text-slate-200">Link status: {filters.linked}</Badge> : null}
           {filters.q ? <Badge className="bg-slate-400/10 text-slate-200">Search: {filters.q}</Badge> : null}
         </div>

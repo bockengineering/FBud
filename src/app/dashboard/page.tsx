@@ -31,7 +31,7 @@ export default function DashboardPage() {
           <MetricCard label="Programs" value={`${totals.programCount}`} detail="Parsed program pages" href="/programs" />
           <MetricCard label="Budget lines" value={`${lineSummary.lineItemCount}`} detail="R-1 / P-1 / O-1 rows" href="/budget-lines" />
           <MetricCard label="Mission areas" value={`${totals.missionCount}`} detail="Portfolio chapters" href="/mission-areas" />
-          <MetricCard label="RDT&E" value={money(totals.rdteFy2027)} detail="Parsed FY2027 split" href="/programs?funding=rdte" />
+          <MetricCard label="RDT&E" value={money(lineSummary.rdteTotal)} detail="R-1 included rows" href="/rdte" />
           <MetricCard label="Procurement" value={money(totals.procurementFy2027)} detail="Parsed FY2027 split" href="/programs?funding=procurement" />
         </div>
         <div className="grid gap-4 xl:grid-cols-[1fr_1.25fr]">
