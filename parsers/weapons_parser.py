@@ -111,6 +111,39 @@ def clean_text(value: str) -> str:
     return value.strip()
 
 
+def label_pattern(label: str) -> str:
+    label = label.strip()
+    patterns = {
+        "Mission:": r"Mission\s*:",
+        "FY 2027 Program:": r"FY\s+2027\s+Program\s*:",
+        "Prime Contractor(s):": r"Prime\s+Contractor\(s\)\s*:",
+        "Prime Contractors:": r"Prime\s+Contractors\s*:",
+        "Prime Contractor:": r"Prime\s+Contractor\s*:",
+        "Note:": r"Note\s*:",
+        "Numbers may": r"Numbers\s+may",
+        "Qty": r"Qty",
+        "RDT&E": r"RDT&E",
+        "Procurement": r"Procurement",
+        "Government-Owned, Contractor-Operated Production Facilities:": r"Government-Owned,\s+Contractor-Operated\s+Production\s+Facilities\s*:",
+        "Commercial-Owned, Contractor-Operated Production Facilities:": r"Commercial-Owned,\s+Contractor-Operated\s+Production\s+Facilities\s*:",
+    }
+    return patterns.get(label, re.escape(label))
+
+
+def find_label(text: str, label: str) -> Optional[re.Match[str]]:
+    return re.search(label_pattern(label), text, flags=re.I)
+
+
+def before_first_label(text: str, labels: Iterable[str]) -> str:
+    positions = []
+    for label in labels:
+        match = find_label(text, label)
+        if match:
+            positions.append(match.start())
+    end = min(positions) if positions else len(text)
+    return clean_text(text[:end])
+
+
 def amount(value: str) -> Optional[float]:
     value = value.strip()
     if not value or value == "-":
@@ -246,13 +279,13 @@ def extract_companies(raw: str) -> List[Dict[str, str]]:
 
 
 def find_section(text: str, start_label: str, end_labels: Iterable[str]) -> str:
-    start = re.search(re.escape(start_label) + r"\s*", text, flags=re.I)
+    start = find_label(text, start_label)
     if not start:
         return ""
     tail = text[start.end() :]
     end_positions = []
     for label in end_labels:
-        match = re.search(re.escape(label), tail, flags=re.I)
+        match = find_label(tail, label)
         if match:
             end_positions.append(match.start())
     end = min(end_positions) if end_positions else len(tail)
@@ -436,10 +469,37 @@ class WeaponsParser(BudgetParser):
     def _enrich_program(self, raw: Dict[str, Any], text: str, physical_page: Optional[int]) -> Dict[str, Any]:
         page_label = raw["page_label"]
         after_label = text.split(page_label, 1)[1] if page_label and page_label in text else text
-        description = clean_text(after_label.split("Mission:", 1)[0])
+        description = before_first_label(
+            after_label,
+            [
+                "Mission:",
+                "FY 2027 Program:",
+                "Prime Contractor(s):",
+                "Prime Contractors:",
+                "Prime Contractor:",
+                "Note:",
+                "Numbers may",
+                "Qty",
+            ],
+        )
         mission = find_section(after_label, "Mission:", ["FY 2027 Program:"])
-        fy_program = find_section(after_label, "FY 2027 Program:", ["Prime Contractor(s):", "Prime Contractor:"])
+        fy_program = find_section(
+            after_label,
+            "FY 2027 Program:",
+            [
+                "Prime Contractor(s):",
+                "Prime Contractors:",
+                "Prime Contractor:",
+                "Government-Owned, Contractor-Operated Production Facilities:",
+                "Commercial-Owned, Contractor-Operated Production Facilities:",
+                "Note:",
+                "Numbers may",
+                "Qty",
+            ],
+        )
         contractors_raw = find_section(after_label, "Prime Contractor(s):", ["Note:", "Numbers may", "Qty", "RDT&E"])
+        if not contractors_raw:
+            contractors_raw = find_section(after_label, "Prime Contractors:", ["Note:", "Numbers may", "Qty", "RDT&E"])
         if not contractors_raw:
             contractors_raw = find_section(after_label, "Prime Contractor:", ["Note:", "Numbers may", "Qty", "RDT&E"])
         notes = find_section(after_label, "Note:", ["Numbers may", "Qty", "RDT&E"])
