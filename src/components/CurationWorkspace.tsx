@@ -15,6 +15,30 @@ import type { BudgetDocument, BudgetLineItem, Program, ProgramLineItemLink } fro
 const STORAGE_KEY = "fbud-curation-v1";
 const NO_PROGRAM = "__no_program__";
 
+export type CurationProgram = Pick<Program, "id" | "name" | "short_name">;
+export type CurationLineItem = Pick<
+  BudgetLineItem,
+  | "id"
+  | "program_id"
+  | "document_id"
+  | "document_type"
+  | "line_item_name"
+  | "service_or_component"
+  | "account_title"
+  | "appropriation_account"
+  | "program_element"
+  | "line_number"
+  | "organization"
+  | "raw_text"
+  | "needs_review"
+  | "amount_millions"
+  | "source_page"
+  | "appropriation_type"
+  | "include_in_toa"
+>;
+export type CurationLink = Pick<ProgramLineItemLink, "budget_line_item_id" | "program_id" | "relationship_type">;
+export type CurationDocument = Pick<BudgetDocument, "id" | "source_filename">;
+
 type ManualLineItemOverride = {
   budget_line_item_id: string;
   program_id?: string | null;
@@ -41,7 +65,7 @@ type Draft = {
 };
 
 type EffectiveRecord = {
-  item: BudgetLineItem;
+  item: CurationLineItem;
   override?: ManualLineItemOverride;
   parserProgramId: string | null;
   effectiveProgramId: string | null;
@@ -116,10 +140,10 @@ export function CurationWorkspace({
   documents,
   initialLineItemId,
 }: {
-  programs: Program[];
-  lineItems: BudgetLineItem[];
-  links: ProgramLineItemLink[];
-  documents: BudgetDocument[];
+  programs: CurationProgram[];
+  lineItems: CurationLineItem[];
+  links: CurationLink[];
+  documents: CurationDocument[];
   initialLineItemId?: string;
 }) {
   const [state, setState] = useState<CurationState>(emptyState);
@@ -154,7 +178,7 @@ export function CurationWorkspace({
   const programById = useMemo(() => new Map(programs.map((program) => [program.id, program])), [programs]);
   const documentById = useMemo(() => new Map(documents.map((document) => [document.id, document])), [documents]);
   const parserLinkByLine = useMemo(() => {
-    const map = new Map<string, ProgramLineItemLink>();
+    const map = new Map<string, CurationLink>();
     for (const link of links) {
       if (!map.has(link.budget_line_item_id)) map.set(link.budget_line_item_id, link);
     }

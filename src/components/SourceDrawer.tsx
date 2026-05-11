@@ -27,7 +27,6 @@ export function SourceDrawer({
   sectionLabel: string;
   pageLabel: string;
   pdfPageNumber: number | null;
-  excerpt: string;
   triggerLabel?: string;
   variant?: "outline" | "ghost" | "link";
   className?: string;

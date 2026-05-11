@@ -24,7 +24,6 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
     pageLabel: program.page_label,
     pdfPageNumber: program.pdf_page_number,
   };
-  const contractorExcerpt = program.prime_contractors.map((contractor) => `${contractor.role}: ${contractor.name}`).join("\n");
 
   return (
     <AppShell>
@@ -43,7 +42,6 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
                 <SourceDrawer
                   {...sourceBase}
                   sectionLabel="Program Source Page"
-                  excerpt={program.source_text}
                   triggerLabel={source(program.page_label)}
                 />
                 {program.needs_review ? <Badge className="bg-orange-400/10 text-orange-200">Parser review</Badge> : null}
@@ -54,7 +52,6 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
                 <SourceDrawer
                   {...sourceBase}
                   sectionLabel="Description Evidence"
-                  excerpt={program.description}
                   triggerLabel="View description source"
                   variant="ghost"
                 />
@@ -69,7 +66,6 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
             <SourceDrawer
               {...sourceBase}
               sectionLabel="Funding Table Evidence"
-              excerpt={program.raw_table_text}
               triggerLabel="Open funding table source"
             />
             <div className="grid gap-4 lg:grid-cols-2">
@@ -90,7 +86,6 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
                     <SourceDrawer
                       {...sourceBase}
                       sectionLabel="Mission Evidence"
-                      excerpt={program.mission}
                       triggerLabel="Source"
                       variant="ghost"
                     />
@@ -105,7 +100,6 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
                     <SourceDrawer
                       {...sourceBase}
                       sectionLabel="FY2027 Program Evidence"
-                      excerpt={program.fy2027_program_summary}
                       triggerLabel="Source"
                       variant="ghost"
                     />
@@ -121,7 +115,6 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
                   <SourceDrawer
                     {...sourceBase}
                     sectionLabel="Prime Contractor Evidence"
-                    excerpt={contractorExcerpt || "No contractor evidence parsed."}
                     triggerLabel="Source"
                     variant="ghost"
                   />
@@ -148,7 +141,6 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
                     <SourceDrawer
                       {...sourceBase}
                       sectionLabel="Full Raw Page Evidence"
-                      excerpt={program.source_text}
                       triggerLabel="Open PDF drawer"
                     />
                   </div>
@@ -180,7 +172,6 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
                     <SourceDrawer
                       {...sourceBase}
                       sectionLabel="Program Source Page"
-                      excerpt={program.source_text}
                       triggerLabel={program.page_label}
                       variant="link"
                     />

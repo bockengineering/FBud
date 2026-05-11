@@ -97,7 +97,6 @@ export type BudgetDocument = {
   row_count?: number;
   included_in_toa_total_millions?: number | null;
   displayed_total_millions?: number | null;
-  parser_confidence?: number;
 };
 
 export type BudgetLineItem = {

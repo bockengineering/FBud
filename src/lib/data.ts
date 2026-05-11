@@ -61,7 +61,6 @@ export function getBudgetDocuments(): BudgetDocument[] {
       row_count: data.funding_rows.length,
       displayed_total_millions: summary().totalFy2027,
       included_in_toa_total_millions: summary().totalFy2027,
-      parser_confidence: 0.88,
     },
   ];
 }
