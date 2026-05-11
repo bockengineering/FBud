@@ -24,6 +24,10 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
     pageLabel: program.page_label,
     pdfPageNumber: program.pdf_page_number,
   };
+  const chartProgram = {
+    page_label: program.page_label,
+    computed: program.computed,
+  };
 
   return (
     <AppShell>
@@ -71,11 +75,11 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
             <div className="grid gap-4 lg:grid-cols-2">
               <Card className="border-white/10 bg-white/[0.045] shadow-none">
                 <CardHeader><CardTitle className="text-white">Total Funding Trend</CardTitle></CardHeader>
-                <CardContent><FundingBars program={program} /></CardContent>
+                <CardContent><FundingBars program={chartProgram} /></CardContent>
               </Card>
               <Card className="border-white/10 bg-white/[0.045] shadow-none">
                 <CardHeader><CardTitle className="text-white">RDT&E vs Procurement</CardTitle></CardHeader>
-                <CardContent><FundingSplit program={program} /></CardContent>
+                <CardContent><FundingSplit program={chartProgram} /></CardContent>
               </Card>
             </div>
             <div className="grid gap-4 lg:grid-cols-2">

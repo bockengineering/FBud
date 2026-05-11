@@ -2,11 +2,16 @@
 
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-import type { MissionArea, Program } from "@/lib/types";
+import type { MissionArea, ProgramComputed } from "@/lib/types";
 
 const currency = new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 });
 
-export function FundingBars({ program }: { program: Program }) {
+type FundingChartProgram = {
+  page_label: string;
+  computed: ProgramComputed;
+};
+
+export function FundingBars({ program }: { program: FundingChartProgram }) {
   const rows = [
     { year: "FY2025", total: program.computed.fy2025_total, page: program.page_label },
     { year: "FY2026", total: program.computed.fy2026_total, page: program.page_label },
@@ -25,7 +30,7 @@ export function FundingBars({ program }: { program: Program }) {
   );
 }
 
-export function FundingSplit({ program }: { program: Program }) {
+export function FundingSplit({ program }: { program: FundingChartProgram }) {
   const rows = [
     { year: "FY2025", rdte: program.computed.fy2025_rdte, procurement: program.computed.fy2025_procurement },
     { year: "FY2026", rdte: program.computed.fy2026_rdte, procurement: program.computed.fy2026_procurement },
