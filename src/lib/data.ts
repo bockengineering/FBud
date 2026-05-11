@@ -112,6 +112,12 @@ export function lineItemPercentChange(item: BudgetLineItem) {
   return (lineItemDelta(item) / prior) * 100;
 }
 
+export type RdteFilters = {
+  service?: string;
+  activity?: string;
+  activityName?: string;
+};
+
 export function budgetLineSearch(item: BudgetLineItem, query: string) {
   const program = programForBudgetLineItem(item);
   const document = getBudgetDocument(item.document_id);
@@ -168,12 +174,16 @@ export function filteredBudgetLineItems(params: {
   return items;
 }
 
-export function rdteLineItems() {
-  return getBudgetLineItems().filter((item) => item.document_type === "r1" && item.include_in_toa);
+export function rdteLineItems(filters: RdteFilters = {}) {
+  let items = getBudgetLineItems().filter((item) => item.document_type === "r1" && item.include_in_toa);
+  if (filters.service) items = items.filter((item) => item.service_or_component === filters.service);
+  if (filters.activity) items = items.filter((item) => item.budget_activity === filters.activity);
+  if (filters.activityName) items = items.filter((item) => item.budget_activity_name === filters.activityName);
+  return items;
 }
 
-export function rdteCategorySummary() {
-  const items = rdteLineItems();
+export function rdteCategorySummary(filters: RdteFilters = {}) {
+  const items = rdteLineItems(filters);
   const categories = new Map<
     string,
     {
@@ -230,7 +240,7 @@ export function rdteCategorySummary() {
     .sort((a, b) => b.fy2027 - a.fy2027);
 }
 
-export function rdteServiceSummary() {
+export function rdteServiceSummary(filters: RdteFilters = {}) {
   const services = new Map<
     string,
     {
@@ -244,7 +254,7 @@ export function rdteServiceSummary() {
     }
   >();
 
-  for (const item of rdteLineItems()) {
+  for (const item of rdteLineItems(filters)) {
     const service = item.service_or_component || "Unspecified";
     const current = services.get(service) ?? {
       service,
@@ -273,8 +283,8 @@ export function rdteServiceSummary() {
     .sort((a, b) => b.fy2027 - a.fy2027);
 }
 
-export function rdteSummary() {
-  const items = rdteLineItems();
+export function rdteSummary(filters: RdteFilters = {}) {
+  const items = rdteLineItems(filters);
   const fy2025 = items.reduce((sum, item) => sum + (item.fy2025_total_amount_millions ?? 0), 0);
   const fy2026 = items.reduce((sum, item) => sum + (item.fy2026_total_amount_millions ?? 0), 0);
   const fy2027 = items.reduce((sum, item) => sum + lineItemRequestTotal(item), 0);
@@ -284,7 +294,7 @@ export function rdteSummary() {
 
   return {
     rowCount: items.length,
-    categoryCount: rdteCategorySummary().length,
+    categoryCount: rdteCategorySummary(filters).length,
     linkedCount: linked,
     fy2025,
     fy2026,
@@ -297,12 +307,12 @@ export function rdteSummary() {
   };
 }
 
-export function topRdteLineItems(limit = 12) {
-  return [...rdteLineItems()].sort((a, b) => lineItemRequestTotal(b) - lineItemRequestTotal(a)).slice(0, limit);
+export function topRdteLineItems(limit = 12, filters: RdteFilters = {}) {
+  return [...rdteLineItems(filters)].sort((a, b) => lineItemRequestTotal(b) - lineItemRequestTotal(a)).slice(0, limit);
 }
 
-export function rdteLineItemMovers(limit = 8) {
-  const items = rdteLineItems().filter((item) => lineItemRequestTotal(item) || item.fy2026_total_amount_millions);
+export function rdteLineItemMovers(limit = 8, filters: RdteFilters = {}) {
+  const items = rdteLineItems(filters).filter((item) => lineItemRequestTotal(item) || item.fy2026_total_amount_millions);
   return {
     increases: [...items].sort((a, b) => lineItemDelta(b) - lineItemDelta(a)).slice(0, limit),
     declines: [...items].sort((a, b) => lineItemDelta(a) - lineItemDelta(b)).slice(0, limit),

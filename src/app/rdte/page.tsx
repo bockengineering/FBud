@@ -22,8 +22,50 @@ import {
 } from "@/lib/data";
 import type { BudgetLineItem } from "@/lib/types";
 
-function categoryHref(activity: string, name: string) {
-  return `/budget-lines?document=r1&activity=${encodeURIComponent(activity)}&activity_name=${encodeURIComponent(name)}&toa=included`;
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+type RdtePageFilters = {
+  service?: string;
+  activity?: string;
+  activityName?: string;
+};
+
+function one(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function rdteHref(filters: RdtePageFilters) {
+  const params = new URLSearchParams();
+  if (filters.service) params.set("service", filters.service);
+  if (filters.activity) params.set("activity", filters.activity);
+  if (filters.activityName) params.set("activity_name", filters.activityName);
+  const query = params.toString();
+  return query ? `/rdte?${query}` : "/rdte";
+}
+
+function categoryHref(activity: string, name: string, filters: RdtePageFilters) {
+  const isActive = filters.activity === activity && filters.activityName === name;
+  return rdteHref({
+    service: filters.service,
+    activity: isActive ? undefined : activity,
+    activityName: isActive ? undefined : name,
+  });
+}
+
+function serviceHref(service: string, filters: RdtePageFilters) {
+  return rdteHref({
+    service: filters.service === service ? undefined : service,
+    activity: filters.activity,
+    activityName: filters.activityName,
+  });
+}
+
+function lineItemsHref(filters: RdtePageFilters, linked?: "linked") {
+  const params = new URLSearchParams({ document: "r1", toa: "included" });
+  if (filters.service) params.set("service", filters.service);
+  if (filters.activity) params.set("activity", filters.activity);
+  if (filters.activityName) params.set("activity_name", filters.activityName);
+  if (linked) params.set("linked", linked);
+  return `/budget-lines?${params.toString()}`;
 }
 
 function LineItemRow({ item }: { item: BudgetLineItem }) {
@@ -58,12 +100,19 @@ function LineItemRow({ item }: { item: BudgetLineItem }) {
   );
 }
 
-export default function RdtePage() {
-  const summary = rdteSummary();
-  const categories = rdteCategorySummary();
-  const services = rdteServiceSummary();
-  const topLines = topRdteLineItems(12);
-  const movers = rdteLineItemMovers(7);
+export default async function RdtePage({ searchParams }: { searchParams: SearchParams }) {
+  const params = await searchParams;
+  const filters = {
+    service: one(params.service),
+    activity: one(params.activity),
+    activityName: one(params.activity_name),
+  };
+  const hasFilters = Boolean(filters.service || filters.activity || filters.activityName);
+  const summary = rdteSummary(filters);
+  const categories = rdteCategorySummary(filters);
+  const services = rdteServiceSummary(filters);
+  const topLines = topRdteLineItems(12, filters);
+  const movers = rdteLineItemMovers(7, filters);
   const topCategory = categories[0];
   const growthCategory = [...categories].sort((a, b) => b.delta - a.delta)[0];
   const mandatoryCategory = [...categories].sort((a, b) => b.mandatory - a.mandatory)[0];
@@ -79,17 +128,30 @@ export default function RdtePage() {
               A category-level view of the R-1 request, grouped by budget activity and tied back to line-item drilldowns. FY2027 is the President&apos;s Budget request.
             </p>
           </div>
-          <Link href="/budget-lines?document=r1&toa=included" className="text-sm text-cyan-300 hover:text-cyan-100">
-            Open all R-1 line items
+          <Link href={lineItemsHref(filters)} className="text-sm text-cyan-300 hover:text-cyan-100">
+            Open matching R-1 line items
           </Link>
         </div>
+
+        {hasFilters ? (
+          <div className="flex flex-wrap items-center gap-2 rounded-md border border-cyan-300/20 bg-cyan-300/[0.05] p-3">
+            <span className="text-sm text-slate-400">Active RDT&E filter:</span>
+            {filters.service ? <Badge className="bg-cyan-400/10 text-cyan-200">Service: {filters.service}</Badge> : null}
+            {filters.activityName ? <Badge className="bg-cyan-400/10 text-cyan-200">Category: {filters.activity} {filters.activityName}</Badge> : null}
+            <Link href="/rdte" className="ml-auto text-sm text-cyan-300 hover:text-cyan-100">Clear filters</Link>
+          </div>
+        ) : (
+          <div className="rounded-md border border-white/10 bg-white/[0.035] p-3 text-sm text-slate-400">
+            Click a category bar or service bar to filter the full page. Click the same bar again to remove that filter.
+          </div>
+        )}
 
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
           <MetricCard label="FY2027 R-1 request" value={money(summary.fy2027)} detail={`${summary.rowCount} TOA-included rows`} />
           <MetricCard label="FY2026 to FY2027" value={delta(summary.delta)} detail={pct(summary.percentChange)} tone={summary.delta >= 0 ? "positive" : "negative"} />
           <MetricCard label="Discretionary" value={money(summary.discretionary)} detail="FY2027 request" />
           <MetricCard label="Mandatory" value={money(summary.mandatory)} detail={`${summary.mandatoryShare.toFixed(1)}% of FY2027`} />
-          <MetricCard label="Linked to programs" value={`${summary.linkedCount}`} detail={`${summary.categoryCount} R-1 categories`} href="/budget-lines?document=r1&linked=linked" />
+          <MetricCard label="Linked to programs" value={`${summary.linkedCount}`} detail={`${summary.categoryCount} R-1 categories`} href={lineItemsHref(filters, "linked")} />
         </div>
 
         <div className="grid gap-4 xl:grid-cols-[1.35fr_.9fr]">
@@ -99,28 +161,34 @@ export default function RdtePage() {
               <p className="text-sm text-slate-400">Stacked by discretionary and mandatory request columns.</p>
             </CardHeader>
             <CardContent>
-              <RdteCategoryRequestChart categories={categories} />
+              <RdteCategoryRequestChart categories={categories} activeActivity={filters.activity} activeActivityName={filters.activityName} />
             </CardContent>
           </Card>
 
           <Card className="border-white/10 bg-white/[0.045] shadow-none">
             <CardHeader><CardTitle className="text-white">What Is Driving the Shape</CardTitle></CardHeader>
             <CardContent className="space-y-3">
-              <Link href={categoryHref(topCategory.activity, topCategory.name)} className="block rounded-md border border-white/10 bg-black/20 p-4 hover:bg-white/[0.06]">
-                <div className="text-xs uppercase tracking-[0.16em] text-slate-500">Largest category</div>
-                <div className="mt-2 font-semibold text-white">{topCategory.label}</div>
-                <div className="mt-1 text-sm text-slate-400">{money(topCategory.fy2027)} · {topCategory.share.toFixed(1)}% of R-1</div>
-              </Link>
-              <Link href={categoryHref(growthCategory.activity, growthCategory.name)} className="block rounded-md border border-white/10 bg-black/20 p-4 hover:bg-white/[0.06]">
-                <div className="text-xs uppercase tracking-[0.16em] text-slate-500">Largest growth category</div>
-                <div className="mt-2 font-semibold text-white">{growthCategory.label}</div>
-                <div className="mt-1 text-sm text-emerald-300">{delta(growthCategory.delta)} vs FY2026</div>
-              </Link>
-              <Link href={categoryHref(mandatoryCategory.activity, mandatoryCategory.name)} className="block rounded-md border border-white/10 bg-black/20 p-4 hover:bg-white/[0.06]">
-                <div className="text-xs uppercase tracking-[0.16em] text-slate-500">Most mandatory-funded category</div>
-                <div className="mt-2 font-semibold text-white">{mandatoryCategory.label}</div>
-                <div className="mt-1 text-sm text-slate-400">{money(mandatoryCategory.mandatory)} mandatory request</div>
-              </Link>
+              {topCategory ? (
+                <Link href={categoryHref(topCategory.activity, topCategory.name, filters)} className="block rounded-md border border-white/10 bg-black/20 p-4 hover:bg-white/[0.06]">
+                  <div className="text-xs uppercase tracking-[0.16em] text-slate-500">Largest category</div>
+                  <div className="mt-2 font-semibold text-white">{topCategory.label}</div>
+                  <div className="mt-1 text-sm text-slate-400">{money(topCategory.fy2027)} · {topCategory.share.toFixed(1)}% of filtered R-1</div>
+                </Link>
+              ) : null}
+              {growthCategory ? (
+                <Link href={categoryHref(growthCategory.activity, growthCategory.name, filters)} className="block rounded-md border border-white/10 bg-black/20 p-4 hover:bg-white/[0.06]">
+                  <div className="text-xs uppercase tracking-[0.16em] text-slate-500">Largest growth category</div>
+                  <div className="mt-2 font-semibold text-white">{growthCategory.label}</div>
+                  <div className="mt-1 text-sm text-emerald-300">{delta(growthCategory.delta)} vs FY2026</div>
+                </Link>
+              ) : null}
+              {mandatoryCategory ? (
+                <Link href={categoryHref(mandatoryCategory.activity, mandatoryCategory.name, filters)} className="block rounded-md border border-white/10 bg-black/20 p-4 hover:bg-white/[0.06]">
+                  <div className="text-xs uppercase tracking-[0.16em] text-slate-500">Most mandatory-funded category</div>
+                  <div className="mt-2 font-semibold text-white">{mandatoryCategory.label}</div>
+                  <div className="mt-1 text-sm text-slate-400">{money(mandatoryCategory.mandatory)} mandatory request</div>
+                </Link>
+              ) : null}
               <div className="rounded-md border border-white/10 bg-white/[0.035] p-4 text-sm leading-6 text-slate-400">
                 Starred display categories are preserved from the R-1 workbook instead of forced into standard activity labels, so unusual mandatory or cross-title rows remain auditable.
               </div>
@@ -147,7 +215,7 @@ export default function RdtePage() {
                   {categories.map((category) => (
                     <TableRow key={category.id} className="border-white/10">
                       <TableCell>
-                        <Link href={categoryHref(category.activity, category.name)} className="font-medium text-cyan-200 hover:text-cyan-100">
+                        <Link href={categoryHref(category.activity, category.name, filters)} className="font-medium text-cyan-200 hover:text-cyan-100">
                           {category.label}
                         </Link>
                       </TableCell>
@@ -166,10 +234,10 @@ export default function RdtePage() {
           <Card className="border-white/10 bg-white/[0.045] shadow-none">
             <CardHeader><CardTitle className="text-white">R-1 Request by Service</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <RdteServiceChart services={services} />
+              <RdteServiceChart services={services} activeService={filters.service} />
               <div className="grid gap-2">
                 {services.slice(0, 5).map((service) => (
-                  <Link key={service.service} href={`/budget-lines?document=r1&service=${encodeURIComponent(service.service)}&toa=included`} className="flex items-center justify-between rounded-md border border-white/10 px-3 py-2 text-sm hover:bg-white/7">
+                  <Link key={service.service} href={serviceHref(service.service, filters)} className="flex items-center justify-between rounded-md border border-white/10 px-3 py-2 text-sm hover:bg-white/7">
                     <span className="text-slate-200">{service.service}</span>
                     <span className="text-white">{money(service.fy2027)}</span>
                   </Link>

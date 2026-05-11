@@ -1,10 +1,13 @@
 "use client";
 
 import { type ReactNode, useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 type RdteCategory = {
   id: string;
+  activity: string;
+  name: string;
   label: string;
   fy2027: number;
   discretionary: number;
@@ -47,11 +50,45 @@ function ChartFrame({ children, className }: { children: ReactNode; className: s
   );
 }
 
-export function RdteCategoryRequestChart({ categories }: { categories: RdteCategory[] }) {
+function useRdteFilterNavigation() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  return (updates: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(updates)) {
+      if (value) params.set(key, value);
+      else params.delete(key);
+    }
+    const query = params.toString();
+    router.push(query ? `${pathname}?${query}` : pathname);
+  };
+}
+
+export function RdteCategoryRequestChart({
+  categories,
+  activeActivity,
+  activeActivityName,
+}: {
+  categories: RdteCategory[];
+  activeActivity?: string;
+  activeActivityName?: string;
+}) {
+  const navigate = useRdteFilterNavigation();
+  const activeCategoryId = activeActivity && activeActivityName ? `${activeActivity}-${activeActivityName}` : null;
   const data = categories.map((category) => ({
     ...category,
     label: shortCategory(category.label),
+    active: `${category.activity}-${category.name}` === activeCategoryId,
   }));
+  const onCategoryClick = (category: RdteCategory) => {
+    const isActive = `${category.activity}-${category.name}` === activeCategoryId;
+    navigate({
+      activity: isActive ? null : category.activity,
+      activity_name: isActive ? null : category.name,
+    });
+  };
 
   return (
     <ChartFrame className="h-[460px] min-h-[460px]">
@@ -65,15 +102,28 @@ export function RdteCategoryRequestChart({ categories }: { categories: RdteCateg
             contentStyle={{ background: "#0b1620", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, color: "#e2e8f0" }}
             formatter={(value, name) => [currency(Number(value)), name === "discretionary" ? "Discretionary" : "Mandatory"]}
           />
-          <Bar dataKey="discretionary" stackId="request" fill="#22d3ee" radius={[4, 0, 0, 4]} />
-          <Bar dataKey="mandatory" stackId="request" fill="#a78bfa" radius={[0, 4, 4, 0]} />
+          <Bar dataKey="discretionary" stackId="request" radius={[4, 0, 0, 4]} onClick={(entry) => onCategoryClick(entry.payload)} className="cursor-pointer">
+            {data.map((category) => (
+              <Cell key={`${category.id}-disc`} fill={!activeCategoryId || category.active ? "#22d3ee" : "rgba(34,211,238,0.28)"} />
+            ))}
+          </Bar>
+          <Bar dataKey="mandatory" stackId="request" radius={[0, 4, 4, 0]} onClick={(entry) => onCategoryClick(entry.payload)} className="cursor-pointer">
+            {data.map((category) => (
+              <Cell key={`${category.id}-mand`} fill={!activeCategoryId || category.active ? "#a78bfa" : "rgba(167,139,250,0.28)"} />
+            ))}
+          </Bar>
         </BarChart>
       </ResponsiveContainer>
     </ChartFrame>
   );
 }
 
-export function RdteServiceChart({ services }: { services: RdteService[] }) {
+export function RdteServiceChart({ services, activeService }: { services: RdteService[]; activeService?: string }) {
+  const navigate = useRdteFilterNavigation();
+  const onServiceClick = (service: RdteService) => {
+    navigate({ service: service.service === activeService ? null : service.service });
+  };
+
   return (
     <ChartFrame className="h-[340px] min-h-[340px]">
       <ResponsiveContainer width="100%" height="100%">
@@ -86,9 +136,12 @@ export function RdteServiceChart({ services }: { services: RdteService[] }) {
             contentStyle={{ background: "#0b1620", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, color: "#e2e8f0" }}
             formatter={(value) => [currency(Number(value)), "FY2027 request"]}
           />
-          <Bar dataKey="fy2027" radius={[4, 4, 0, 0]}>
+          <Bar dataKey="fy2027" radius={[4, 4, 0, 0]} onClick={(entry) => onServiceClick(entry.payload)} className="cursor-pointer">
             {services.map((service, index) => (
-              <Cell key={service.service} fill={colors[index % colors.length]} />
+              <Cell
+                key={service.service}
+                fill={!activeService || service.service === activeService ? colors[index % colors.length] : "rgba(148,163,184,0.25)"}
+              />
             ))}
           </Bar>
         </BarChart>
